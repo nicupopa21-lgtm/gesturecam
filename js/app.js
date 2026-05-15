@@ -698,18 +698,39 @@ const btn = document.getElementById("train-btn");
 /* ---------------- BASE STYLE ---------------- */
 btn.style.position = "fixed";
 btn.style.left = "20px";
-btn.style.top = "70vh"; // important: no bottom
-btn.style.padding = "16px 22px";
+btn.style.top = "70vh";
+
+/* ---- SIZE (bigger + easier mobile tap) ---- */
+btn.style.padding = "18px 26px";
+btn.style.fontSize = "18px";
+
+/* ---- PERFECT ROUND SHAPE ---- */
 btn.style.borderRadius = "999px";
-btn.style.background = "rgba(255,255,255,0.25)";
-btn.style.backdropFilter = "blur(10px)";
+
+/* ---- BRIGHTER GLASS LOOK ---- */
+btn.style.background = "rgba(255, 255, 255, 0.35)";
+btn.style.border = "1px solid rgba(255, 255, 255, 0.6)";
+
+/* ---- MORE GLOW / VISIBILITY ---- */
+btn.style.boxShadow = "0 8px 25px rgba(0,0,0,0.35), 0 0 18px rgba(255,255,255,0.25)";
+
+/* ---- TEXT POP ---- */
 btn.style.color = "white";
-btn.style.fontSize = "16px";
-btn.style.fontWeight = "bold";
-btn.style.border = "1px solid rgba(255,255,255,0.4)";
-btn.style.zIndex = "999999";
+btn.style.fontWeight = "700";
+
+/* ---- GLASS EFFECT (better blur) ---- */
+btn.style.backdropFilter = "blur(14px)";
+btn.style.webkitBackdropFilter = "blur(14px)";
+
+/* ---- MOBILE TOUCH FEEL ---- */
 btn.style.userSelect = "none";
-btn.style.touchAction = "none"; // IMPORTANT for mobile
+btn.style.touchAction = "none";
+btn.style.cursor = "grab";
+
+/* ---- OPTIONAL: subtle animation feel ---- */
+btn.style.transition = "transform 0.08s ease, box-shadow 0.2s ease";
+
+
 
 /* ---------------- STATE ---------------- */
 let isDragging = false;
@@ -768,4 +789,14 @@ btn.addEventListener("pointerup", (e) => {
 });
 
 
+btn.addEventListener("pointerdown", () => {
+  btn.style.transform = "scale(0.96)";
+});
 
+btn.addEventListener("pointerup", () => {
+  btn.style.transform = "scale(1)";
+});
+
+btn.addEventListener("pointercancel", () => {
+  btn.style.transform = "scale(1)";
+});
