@@ -425,37 +425,126 @@ function drawHands() {
 
 function askTrainingLabel(buffer) {
 
-  const category = prompt("Type BASIC or MOTION");
-  if (!category) {
+  const overlay = document.createElement("div");
+  overlay.style.position = "fixed";
+  overlay.style.inset = "0";
+  overlay.style.background = "rgba(0,0,0,0.85)";
+  overlay.style.zIndex = "999999";
+  overlay.style.display = "flex";
+  overlay.style.flexDirection = "column";
+  overlay.style.justifyContent = "center";
+  overlay.style.alignItems = "center";
+  overlay.style.gap = "12px";
+  overlay.style.fontFamily = "monospace";
+  overlay.style.color = "white";
+
+  // ---------------- TITLE ----------------
+  const title = document.createElement("div");
+  title.textContent = "SAVE TRAINING SAMPLE";
+  title.style.fontSize = "20px";
+  title.style.marginBottom = "10px";
+
+  // ---------------- CATEGORY ----------------
+  const categorySelect = document.createElement("select");
+  categorySelect.style.padding = "8px";
+  categorySelect.style.fontSize = "16px";
+
+  ["BASIC", "MOTION"].forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c;
+    opt.textContent = c;
+    categorySelect.appendChild(opt);
+  });
+
+  // ---------------- LABEL ----------------
+  const labelSelect = document.createElement("select");
+  labelSelect.style.padding = "8px";
+  labelSelect.style.fontSize = "16px";
+
+  const newLabelInput = document.createElement("input");
+  newLabelInput.placeholder = "New label name";
+  newLabelInput.style.padding = "8px";
+  newLabelInput.style.fontSize = "16px";
+  newLabelInput.style.display = "none";
+
+  // ---------------- REFRESH LABELS ----------------
+  function refreshLabels() {
+
+    labelSelect.innerHTML = "";
+
+    const dbSection =
+      categorySelect.value === "MOTION"
+        ? gestureDB.motion
+        : gestureDB.basic;
+
+    Object.keys(dbSection).forEach(k => {
+      const opt = document.createElement("option");
+      opt.value = k;
+      opt.textContent = k;
+      labelSelect.appendChild(opt);
+    });
+
+    const newOpt = document.createElement("option");
+    newOpt.value = "__new__";
+    newOpt.textContent = "+ NEW LABEL";
+    labelSelect.appendChild(newOpt);
+  }
+
+  categorySelect.onchange = refreshLabels;
+  refreshLabels();
+
+  labelSelect.onchange = () => {
+    newLabelInput.style.display =
+      labelSelect.value === "__new__" ? "block" : "none";
+  };
+
+  // ---------------- BUTTONS ----------------
+  const btnRow = document.createElement("div");
+  btnRow.style.display = "flex";
+  btnRow.style.gap = "10px";
+
+  const saveBtn = document.createElement("button");
+  saveBtn.textContent = "SAVE";
+  saveBtn.style.padding = "10px 20px";
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.textContent = "CANCEL";
+  cancelBtn.style.padding = "10px 20px";
+
+  cancelBtn.onclick = () => {
+    overlay.remove();
     trainingLocked = false;
-    return;
-  }
+  };
 
-  const cat = category.toUpperCase();
+  saveBtn.onclick = () => {
 
-  const dbSection =
-    cat === "MOTION"
-      ? gestureDB.motion
-      : gestureDB.basic;
+    const category = categorySelect.value;
 
-  const existing = Object.keys(dbSection).join(", ");
+    let label =
+      labelSelect.value === "__new__"
+        ? newLabelInput.value.trim()
+        : labelSelect.value;
 
-  const label = prompt(
-    `Existing:\n${existing}\n\nType existing OR new label`
-  );
+    if (!label) return;
 
-  if (!label) {
-    trainingLocked = false;
-    return;
-  }
+    label = label.toUpperCase();
 
-  const key = label.toUpperCase();
+    saveRecordedSample(category, label, buffer);
 
-  if (!dbSection[key]) {
-    dbSection[key] = [];
-  }
+    overlay.remove();
+  };
 
-  saveRecordedSample(cat, key, buffer);
+  btnRow.appendChild(saveBtn);
+  btnRow.appendChild(cancelBtn);
+
+  // ---------------- BUILD UI ----------------
+  overlay.appendChild(title);
+  overlay.appendChild(categorySelect);
+  overlay.appendChild(labelSelect);
+  overlay.appendChild(newLabelInput);
+  overlay.appendChild(btnRow);
+
+  document.body.appendChild(overlay);
 }
 
 
@@ -475,7 +564,6 @@ function saveRecordedSample(category, label, buffer) {
     },
 
     landmarks: buffer.map(f => f.landmarks),
-
     timestamp: Date.now()
   };
 
@@ -484,13 +572,13 @@ function saveRecordedSample(category, label, buffer) {
       ? gestureDB.motion
       : gestureDB.basic;
 
+  targetDB[label] = targetDB[label] || [];
   targetDB[label].push(sample);
 
   saveGestureDB();
 
   trainingHUD(`SAVED ${category}:${label}`);
 
-  // unlock training AFTER save
   trainingLocked = false;
 }
 
