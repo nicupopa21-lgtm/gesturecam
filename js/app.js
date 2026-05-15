@@ -205,62 +205,67 @@ function drawHands() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  /* ---------------- NO HAND ---------------- */
   if (!result.landmarks || result.landmarks.length === 0) {
     gestureHUD("NO HAND");
     status("RUNNING (0 hands)");
+    gestureHistory.length = 0; // reset history when no hand
     return;
   }
 
-  for (const hand of result.landmarks) {
+  /* ---------------- PROCESS FIRST HAND ONLY ---------------- */
+  const hand = result.landmarks[0];
 
-    const thumb = hand[4];
-    const index = hand[8];
-    const wrist = hand[0];
-    const middle = hand[9];
-    const handScale = dist(wrist, middle);
+  const thumb = hand[4];
+  const index = hand[8];
+  const wrist = hand[0];
+  const middle = hand[9];
 
-    const pinch = normalize(dist(thumb, index), handScale);
-    const open = normalize(dist(index, wrist), handScale);
+  const handScale = dist(wrist, middle);
 
-    let gesture;
+  const pinch = dist(thumb, index) / handScale;
+  const open = dist(index, wrist) / handScale;
 
-    let gesture;
+  /* ---------------- GESTURE CLASSIFICATION ---------------- */
+  let gesture;
 
-    if (pinch < 0.45 && open > 0.2) {
-      gesture = "PINCH";
-    } 
-    else if (open < 0.2) {
-      gesture = "FIST";
-    } 
-    else {
-      gesture = "OPEN";
-    }
-
-    gestureHistory.push(gesture);
-
-    if (gestureHistory.length > HISTORY_SIZE) {
-      gestureHistory.shift();
-    }
-
-    const stableGesture = mode(gestureHistory);
-
-    gestureHUD(stableGesture);
-
-    for (const p of hand) {
-      ctx.beginPath();
-      ctx.arc(
-        p.x * canvas.width,
-        p.y * canvas.height,
-        6,
-        0,
-        Math.PI * 2
-      );
-      ctx.fillStyle = "cyan";
-      ctx.fill();
-    }
+  if (pinch < 0.45 && open > 0.2) {
+    gesture = "PINCH";
+  } 
+  else if (open < 0.2) {
+    gesture = "FIST";
+  } 
+  else {
+    gesture = "OPEN";
   }
 
-  status("RUNNING (" + result.landmarks.length + " hand(s))");
+  /* ---------------- SMOOTHING ---------------- */
+  gestureHistory.push(gesture);
+
+  if (gestureHistory.length > HISTORY_SIZE) {
+    gestureHistory.shift();
+  }
+
+  const stableGesture = mode(gestureHistory);
+
+  gestureHUD(stableGesture);
+
+  /* ---------------- DRAW LANDMARKS ---------------- */
+  for (const p of hand) {
+    ctx.beginPath();
+    ctx.arc(
+      p.x * canvas.width,
+      p.y * canvas.height,
+      6,
+      0,
+      Math.PI * 2
+    );
+    ctx.fillStyle = "cyan";
+    ctx.fill();
+  }
+
+  /* ---------------- STATUS ---------------- */
+  status("RUNNING (1 hand)");
 }
 
 /* ---------------- LOOP ---------------- */
