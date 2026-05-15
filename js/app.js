@@ -393,36 +393,9 @@ function drawHands() {
 
   if (trainingBuffer.length >= TRAIN_FRAMES) {
 
-    // ---- AVERAGE FEATURES ----
-    const avg = (key) =>
-      trainingBuffer.reduce((sum, f) => sum + f[key], 0) / trainingBuffer.length;
+  trainingActive = false;
 
-    const sample = {
-      features: {
-        pinch: avg("pinch"),
-        open: avg("open"),
-        indexCurl: avg("indexCurl"),
-        middleCurl: avg("middleCurl"),
-        ringCurl: avg("ringCurl"),
-        pinkyCurl: avg("pinkyCurl")
-      },
-
-      landmarks: trainingBuffer.map(f => f.landmarks),
-
-      timestamp: Date.now()
-    };
-
-    // ---- SAVE TO DB ----
-    gestureDB.basic[trainingGesture].push(sample);
-    saveGestureDB();
-
-    trainingHUD(`SAVED ${trainingGesture} (${gestureDB.basic[trainingGesture].length})`);
-
-    // ---- STOP TRAINING ----
-    trainingActive = false;
-    trainingGesture = null;
-    trainingBuffer = [];
-  }
+  askTrainingLabel(); // NEW STEP (we add this next)
 }
 
   // ---------------- DRAW ----------------
@@ -442,6 +415,69 @@ function drawHands() {
   status("RUNNING (1 hand)");
 }
 
+/*---------------Label and save------------------*/
+
+function askTrainingLabel() {
+
+  const category = prompt("Type BASIC or MOTION");
+  if (!category) return;
+
+  const cat = category.toUpperCase();
+
+  const dbSection =
+    cat === "MOTION"
+      ? gestureDB.motion
+      : gestureDB.basic;
+
+  const existing = Object.keys(dbSection).join(", ");
+
+  const label = prompt(
+    `Existing:\n${existing}\n\nType existing OR new label`
+  );
+
+  if (!label) return;
+
+  const key = label.toUpperCase();
+
+  if (!dbSection[key]) {
+    dbSection[key] = [];
+  }
+
+  saveRecordedSample(cat, key);
+}
+
+
+function saveRecordedSample(category, label) {
+
+  const avg = (k) =>
+    trainingBuffer.reduce((sum, f) => sum + f[k], 0) / trainingBuffer.length;
+
+  const sample = {
+    features: {
+      pinch: avg("pinch"),
+      open: avg("open"),
+      indexCurl: avg("indexCurl"),
+      middleCurl: avg("middleCurl"),
+      ringCurl: avg("ringCurl"),
+      pinkyCurl: avg("pinkyCurl")
+    },
+
+    landmarks: trainingBuffer.map(f => f.landmarks),
+
+    timestamp: Date.now()
+  };
+
+  const targetDB =
+    category === "MOTION"
+      ? gestureDB.motion
+      : gestureDB.basic;
+
+  targetDB[label].push(sample);
+
+  saveGestureDB();
+
+  trainingHUD(`SAVED ${category}:${label}`);
+}
 
 /*----------------------TRAINING BUTTON--------------------------*/
 let trainingActive = false;
@@ -451,15 +487,13 @@ let TRAIN_FRAMES = 20;
 
 document.getElementById("train-btn").onclick = () => {
 
-  const label = prompt("Which gesture? PINCH / FIST / OPEN");
+  if (trainingActive) return;
 
-  if (!label) return;
-
-  trainingGesture = label.toUpperCase();
   trainingActive = true;
   trainingBuffer = [];
+  trainingGesture = null;
 
-  trainingHUD(`RECORDING ${trainingGesture}...`);
+  trainingHUD("RECORDING...");
 };
 
 
