@@ -692,5 +692,47 @@ function loop() {
 window.addEventListener("load", startCamera);
 
 
+/* ---------------- TRAIN BUTTON UI STYLE ---------------- */
+const btn = document.getElementById("train-btn");
+
+btn.style.position = "fixed";
+btn.style.bottom = "20px";
+btn.style.left = "20px";
+btn.style.padding = "16px 22px";
+btn.style.borderRadius = "50px";
+btn.style.background = "rgba(255,255,255,0.25)";
+btn.style.backdropFilter = "blur(8px)";
+btn.style.color = "white";
+btn.style.fontSize = "16px";
+btn.style.fontWeight = "bold";
+btn.style.border = "1px solid rgba(255,255,255,0.4)";
+btn.style.cursor = "grab";
+btn.style.zIndex = "999999";
+btn.style.userSelect = "none";
+
+/* ---------------- DRAG SUPPORT ---------------- */
+let dragging = false;
+let offsetX = 0;
+let offsetY = 0;
+
+btn.addEventListener("mousedown", (e) => {
+  dragging = true;
+  offsetX = e.clientX - btn.offsetLeft;
+  offsetY = e.clientY - btn.offsetTop;
+  btn.style.cursor = "grabbing";
+});
+
+window.addEventListener("mousemove", (e) => {
+  if (!dragging) return;
+  btn.style.left = (e.clientX - offsetX) + "px";
+  btn.style.top = (e.clientY - offsetY) + "px";
+});
+
+window.addEventListener("mouseup", () => {
+  dragging = false;
+  btn.style.cursor = "grab";
+});
+
+
 
 
