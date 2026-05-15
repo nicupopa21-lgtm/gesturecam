@@ -1,20 +1,23 @@
-export let video;
+export const video = document.getElementById("video");
 
-export async function initCamera(state) {
-  video = document.getElementById("video");
+export const cameraState = {
+  stream: null,
+  ready: false
+};
 
-  const stream = await navigator.mediaDevices.getUserMedia({
+export async function initCamera() {
+  cameraState.stream = await navigator.mediaDevices.getUserMedia({
     video: { facingMode: "user" },
     audio: false
   });
 
-  video.srcObject = stream;
+  video.srcObject = cameraState.stream;
 
-  return new Promise(res => {
+  await new Promise(resolve => {
     video.onloadedmetadata = () => {
       video.play();
-      state.videoReady = true;
-      res();
+      cameraState.ready = true;
+      resolve();
     };
   });
 }
