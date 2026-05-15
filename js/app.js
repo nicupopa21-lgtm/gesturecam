@@ -70,15 +70,36 @@ function trainingHUD(msg) {
     el.id = "training-hud";
 
     el.style.position = "fixed";
-    el.style.bottom = "10px";
-    el.style.right = "10px";
-    el.style.background = "rgba(0,0,0,0.8)";
-    el.style.color = "yellow";
-    el.style.padding = "8px 12px";
-    el.style.fontSize = "14px";
+    el.style.bottom = "20px";
+    el.style.left = "50%";
+    el.style.transform = "translateX(-50%)";
+
+    /* 🔥 3× BIGGER */
+    el.style.fontSize = "42px";
+    el.style.padding = "18px 26px";
+
+    /* visual */
     el.style.fontFamily = "monospace";
+    el.style.fontWeight = "800";
+    el.style.color = "white";
+    el.style.textAlign = "center";
+
+    /* glass + glow */
+    el.style.background = "rgba(255,255,255,0.18)";
+    el.style.backdropFilter = "blur(14px)";
+    el.style.webkitBackdropFilter = "blur(14px)";
+
+    el.style.border = "1px solid rgba(255,255,255,0.35)";
+    el.style.borderRadius = "18px";
+
+    el.style.boxShadow =
+      "0 10px 30px rgba(0,0,0,0.35), 0 0 20px rgba(255,255,255,0.25)";
+
     el.style.zIndex = "999999";
-    el.style.borderRadius = "6px";
+
+    /* mobile safe */
+    el.style.maxWidth = "90vw";
+    el.style.whiteSpace = "nowrap";
 
     document.body.appendChild(el);
   }
