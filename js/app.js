@@ -1,6 +1,6 @@
 console.log("APP LOADED");
 
-/* ---------------- ERROR DISPLAY (mobile-safe debugging) ---------------- */
+/* ---------------- ERROR DISPLAY ---------------- */
 window.onerror = (msg, src, line, col, err) => {
   document.body.innerHTML = `
     <div style="
@@ -20,13 +20,26 @@ window.onerror = (msg, src, line, col, err) => {
   `;
 };
 
-/* ---------------- MAIN ---------------- */
-async function startCamera() {
-  const video = document.getElementById("video");
-  const loading = document.getElementById("loading-screen");
+/* ---------------- MEDIA PIPE IMPORT ---------------- */
+import {
+  HandLandmarker,
+  FilesetResolver
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest";
 
+/* ---------------- ELEMENTS ---------------- */
+const video = document.getElementById("video");
+const canvas = document.getElementById("skeleton-canvas");
+const ctx = canvas.getContext("2d");
+const loading = document.getElementById("loading-screen");
+
+/* ---------------- ML STATE ---------------- */
+let handLandmarker = null;
+let mlReady = false;
+
+/* ---------------- CAMERA ---------------- */
+async function startCamera() {
   try {
-    if (!video) throw new Error("Missing <video id='video'>");
+    console.log("Requesting camera...");
 
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: "user" },
@@ -34,14 +47,14 @@ async function startCamera() {
     });
 
     video.srcObject = stream;
-
     await video.play();
 
     console.log("Camera started");
 
-    if (loading) {
-      loading.style.display = "none";
-    }
+    if (loading) loading.style.display = "none";
+
+    initML(); // start ML AFTER camera
+    loop();  // start render loop
 
   } catch (err) {
     console.error(err);
@@ -56,58 +69,86 @@ async function startCamera() {
         font-family:monospace;
       ">
         <h3>Camera Failed</h3>
-        <pre>${err.message}</pre>
+        <pre>${err.name}: ${err.message}</pre>
       </div>
     `;
   }
 }
 
-window.addEventListener("load", startCamera);
+/* ---------------- INIT MEDIA PIPE ---------------- */
+async function initML() {
+  try {
+    console.log("Loading ML...");
 
-
-/* -----------------------skeleton test--------------------- */
-
-const canvas = document.getElementById("skeleton-canvas");
-const ctx = canvas.getContext("2d");
-const video = document.getElementById("video");
-
-function resize() {
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-}
-
-function drawFakeSkeleton() {
-  if (!video.videoWidth) return;
-
-  resize();
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  ctx.fillStyle = "cyan";
-
-  // fake points
-  const points = [
-    { x: 0.3, y: 0.3 },
-    { x: 0.5, y: 0.4 },
-    { x: 0.7, y: 0.6 }
-  ];
-
-  for (const p of points) {
-    ctx.beginPath();
-    ctx.arc(
-      p.x * canvas.width,
-      p.y * canvas.height,
-      10,
-      0,
-      Math.PI * 2
+    const vision = await FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
     );
-    ctx.fill();
+
+    handLandmarker = await HandLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath:
+          "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float32/1/hand_landmarker.task",
+        delegate: "CPU"
+      },
+      runningMode: "VIDEO",
+      numHands: 1
+    });
+
+    mlReady = true;
+    console.log("ML READY");
+
+  } catch (e) {
+    console.error("ML failed", e);
   }
 }
 
-function loop() {
-  requestAnimationFrame(loop);
-  drawFakeSkeleton();
+/* ---------------- RESIZE ---------------- */
+function resizeCanvas() {
+  if (!video.videoWidth) return;
+
+  if (
+    canvas.width !== video.videoWidth ||
+    canvas.height !== video.videoHeight
+  ) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+  }
 }
 
-loop();
+/* ---------------- DRAW HANDS ---------------- */
+function drawHands() {
+  if (!mlReady || !handLandmarker) return;
+  if (video.readyState < 2) return;
+
+  resizeCanvas();
+
+  const result = handLandmarker.detectForVideo(video, performance.now());
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!result.landmarks) return;
+
+  for (const hand of result.landmarks) {
+    for (const p of hand) {
+      ctx.beginPath();
+      ctx.arc(
+        p.x * canvas.width,
+        p.y * canvas.height,
+        6,
+        0,
+        Math.PI * 2
+      );
+      ctx.fillStyle = "cyan";
+      ctx.fill();
+    }
+  }
+}
+
+/* ---------------- LOOP ---------------- */
+function loop() {
+  requestAnimationFrame(loop);
+  drawHands();
+}
+
+/* ---------------- START ---------------- */
+window.addEventListener("load", startCamera);
