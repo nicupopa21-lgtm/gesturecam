@@ -23,6 +23,31 @@ function status(msg) {
   el.textContent = msg;
 }
 
+function gestureHUD(text) {
+  let el = document.getElementById("gesture-hud");
+
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "gesture-hud";
+    el.style.position = "fixed";
+    el.style.top = "10px";
+    el.style.right = "10px";
+    el.style.background = "rgba(0,0,0,0.6)";
+    el.style.color = "yellow";
+    el.style.fontSize = "22px";
+    el.style.fontWeight = "bold";
+    el.style.fontFamily = "monospace";
+    el.style.padding = "10px 14px";
+    el.style.borderRadius = "8px";
+    el.style.zIndex = "999999";
+    el.style.textAlign = "right";
+    el.style.maxWidth = "200px";
+    document.body.appendChild(el);
+  }
+
+  el.textContent = text;
+}
+
 /* ---------------- ERROR OVERLAY ---------------- */
 window.onerror = (msg, src, line, col, err) => {
   document.body.innerHTML = `
@@ -124,6 +149,7 @@ async function initML() {
   } catch (e) {
     status("AI FAILED: " + e.message);
   }
+  status("READY - tracking active");
 }
 
 /* ---------------- RESIZE ---------------- */
@@ -140,6 +166,13 @@ function resizeCanvas() {
 }
 
 /* ---------------- DRAW HANDS ---------------- */
+
+function dist(a, b) {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
 function drawHands() {
   if (!mlReady || !handLandmarker) return;
   if (video.readyState < 2) return;
@@ -153,6 +186,21 @@ function drawHands() {
   if (!result.landmarks) return;
 
   for (const hand of result.landmarks) {
+    const thumb = hand[4];
+    const index = hand[8];
+    const wrist = hand[0];
+  
+    const pinch = dist(thumb, index);
+    const open = dist(index, wrist);
+  
+    if (pinch < 0.05) {
+      gestureHUD("🤏 PINCH");
+    } else if (open > 0.25) {
+      gestureHUD("🖐 OPEN HAND");
+    } else {
+      gestureHUD("✊ HAND");
+    }
+  
     for (const p of hand) {
       ctx.beginPath();
       ctx.arc(
@@ -166,7 +214,9 @@ function drawHands() {
       ctx.fill();
     }
   }
-
+  if (!result.landmarks || result.landmarks.length === 0) {
+  gestureHUD("NO HAND");
+}
   status("RUNNING (" + result.landmarks.length + " hand(s))");
 }
 
