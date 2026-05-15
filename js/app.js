@@ -221,33 +221,33 @@ function initGestureDB() {
 
   const savedDB = localStorage.getItem("gestureDB");
 
-  /* DB EXISTS -> LOAD */
-  if (savedDB) {
+  /* DB DOES NOT EXIST -> CREATE */
+  if (!savedDB) {
+    gestureDB = structuredClone(DEFAULT_DB);
+    saveGestureDB();
+    return;
+  }
 
-    try {
-      gestureDB = JSON.parse(savedDB);
+  try {
+    gestureDB = JSON.parse(savedDB);
 
-      console.log("Gesture DB loaded");
-      console.log(gestureDB);
+    console.log("Gesture DB loaded");
+    console.log(gestureDB);
 
-    } catch (err) {
+    // ---------------- MIGRATION GOES HERE ----------------
+    if ((gestureDB.version || 1) < 2) {
+      gestureDB.fingers = gestureDB.fingers || structuredClone(DEFAULT_DB.fingers);
+      gestureDB.version = 2;
 
-      console.error("DB corrupted, recreating");
-
-      gestureDB = structuredClone(DEFAULT_DB);
-
+      console.log("DB migrated to v2 (added fingers)");
       saveGestureDB();
     }
 
-  }
+  } catch (err) {
 
-  /* DB DOES NOT EXIST -> CREATE */
-  else {
-
-    console.log("No DB found, creating new DB");
+    console.error("DB corrupted, recreating");
 
     gestureDB = structuredClone(DEFAULT_DB);
-
     saveGestureDB();
   }
 }
