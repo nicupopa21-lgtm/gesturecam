@@ -205,61 +205,40 @@ function drawHands() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  /* ---------------- NO HAND ---------------- */
   if (!result.landmarks || result.landmarks.length === 0) {
     gestureHUD("NO HAND");
     status("RUNNING (0 hands)");
-    gestureHistory.length = 0; // reset history when no hand
+    gestureHistory.length = 0;
     return;
   }
 
-  /* ---------------- PROCESS FIRST HAND ONLY ---------------- */
   const hand = result.landmarks[0];
 
   const thumb = hand[4];
   const index = hand[8];
   const wrist = hand[0];
   const middle = hand[9];
-  const indexMcp = hand[5];
-  const middleTip = hand[12];
-  const ringTip = hand[16];
 
   const handScale = dist(wrist, middle);
 
+  // normalized distances
   const pinch = dist(thumb, index) / handScale;
   const open = dist(index, wrist) / handScale;
 
-  /* ---------------- GESTURE CLASSIFICATION ---------------- */
   let gesture;
 
-/* finger curl checks */
-const indexCurl = dist(index, indexMcp);
-const middleCurl = dist(hand[12], hand[9]);
-const ringCurl = dist(hand[16], hand[13]);
+  // SIMPLE LOGIC (stable baseline)
+  if (pinch < 0.40) {
+    gesture = "PINCH";
+  } 
+  else if (open < 0.20) {
+    gesture = "FIST";
+  } 
+  else {
+    gesture = "OPEN";
+  }
 
-const handScale = dist(wrist, middle);
-
-/* normalized */
-const nIndexCurl = indexCurl / handScale;
-const nMiddleCurl = middleCurl / handScale;
-const nRingCurl = ringCurl / handScale;
-
-/* PINCH */
-if (dist(thumb, index) / handScale < 0.45 && nIndexCurl > 0.2) {
-  gesture = "PINCH";
-}
-
-/* FIST (ALL FINGERS CURLED) */
-else if (nIndexCurl < 0.15 && nMiddleCurl < 0.15 && nRingCurl < 0.15) {
-  gesture = "FIST";
-}
-
-/* OPEN */
-else {
-  gesture = "OPEN";
-}
-
-  /* ---------------- SMOOTHING ---------------- */
+  // smoothing (keep your system)
   gestureHistory.push(gesture);
 
   if (gestureHistory.length > HISTORY_SIZE) {
@@ -270,7 +249,7 @@ else {
 
   gestureHUD(stableGesture);
 
-  /* ---------------- DRAW LANDMARKS ---------------- */
+  // draw hand
   for (const p of hand) {
     ctx.beginPath();
     ctx.arc(
@@ -284,7 +263,6 @@ else {
     ctx.fill();
   }
 
-  /* ---------------- STATUS ---------------- */
   status("RUNNING (1 hand)");
 }
 
