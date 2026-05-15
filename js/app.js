@@ -1,65 +1,57 @@
 console.log("APP LOADED");
 
-/* =========================================================
-   HUD SYSTEM
-   - lightweight debug + training + save overlays
-========================================================= */
-
-/* ---------------- STATUS BAR (DEBUG TOP) ---------------- */
+/* ---------------- STATUS HUD (MOBILE DEBUG) ---------------- */
 function status(msg) {
   let el = document.getElementById("debug-status");
 
   if (!el) {
     el = document.createElement("div");
     el.id = "debug-status";
-
-    Object.assign(el.style, {
-      position: "fixed",
-      top: "0",
-      left: "0",
-      right: "0",
-      padding: "6px",
-      fontSize: "12px",
-      fontFamily: "monospace",
-      color: "white",
-      background: "rgba(0,0,0,0.85)",
-      zIndex: "999999"
-    });
-
+    el.style.position = "fixed";
+    el.style.top = "0";
+    el.style.left = "0";
+    el.style.right = "0";
+    el.style.background = "rgba(0,0,0,0.85)";
+    el.style.color = "white";
+    el.style.fontSize = "12px";
+    el.style.padding = "6px";
+    el.style.zIndex = "999999";
+    el.style.fontFamily = "monospace";
     document.body.appendChild(el);
   }
 
   el.textContent = msg;
 }
 
-/* ---------------- GESTURE HUD (TOP RIGHT) ---------------- */
 function gestureHUD(text) {
   let el = document.getElementById("gesture-hud");
 
   if (!el) {
     el = document.createElement("div");
     el.id = "gesture-hud";
+    el.style.position = "fixed";
+    el.style.top = "10px";
+    el.style.right = "10px";
+    el.style.background = "rgba(0,0,0,0.6)";
+    el.style.color = "yellow";
+    el.style.fontSize = "16px";
+    el.style.fontWeight = "bold";
+    el.style.fontFamily = "monospace";
+    el.style.padding = "10px 14px";
+    el.style.borderRadius = "8px";
+    el.style.zIndex = "999999";
 
-    Object.assign(el.style, {
-      position: "fixed",
-      top: "10px",
-      right: "10px",
-      padding: "10px 14px",
-      borderRadius: "8px",
-      fontSize: "16px",
-      fontWeight: "bold",
-      fontFamily: "monospace",
-      color: "yellow",
-      background: "rgba(0,0,0,0.6)",
-      zIndex: "999999",
-      whiteSpace: "nowrap"
-    });
+    el.style.whiteSpace = "nowrap";
+    el.style.width = "max-content";
+    el.style.textAlign = "left";
 
     document.body.appendChild(el);
   }
 
+  // ---- FORCE CLEAN SPLIT (prevents leakage) ----
   let [g = "", c = "", f = ""] = (text || "").split("\n");
 
+  // extra safety: strip accidental merging like "90%4 FINGERS"
   c = c.replace(/(\d+)%(\d+)/, "$1%");
   f = f.replace(/(\d+)%(\d+)/, "$2");
 
@@ -70,7 +62,8 @@ function gestureHUD(text) {
   `;
 }
 
-/* ---------------- TRAINING HUD (BOTTOM CENTER) ---------------- */
+
+
 function trainingHUD(msg) {
   let el = document.getElementById("training-hud");
 
@@ -78,27 +71,37 @@ function trainingHUD(msg) {
     el = document.createElement("div");
     el.id = "training-hud";
 
-    Object.assign(el.style, {
-      position: "fixed",
-      bottom: "20px",
-      left: "50%",
-      transform: "translateX(-50%)",
-      fontSize: "42px",
-      padding: "18px 26px",
-      fontFamily: "monospace",
-      fontWeight: "800",
-      color: "white",
-      textAlign: "center",
-      background: "rgba(255,255,255,0.18)",
-      border: "1px solid rgba(255,255,255,0.35)",
-      borderRadius: "18px",
-      backdropFilter: "blur(14px)",
-      webkitBackdropFilter: "blur(14px)",
-      boxShadow: "0 10px 30px rgba(0,0,0,0.35), 0 0 20px rgba(255,255,255,0.25)",
-      zIndex: "999999",
-      maxWidth: "90vw",
-      whiteSpace: "nowrap"
-    });
+    el.style.position = "fixed";
+    el.style.bottom = "20px";
+    el.style.left = "50%";
+    el.style.transform = "translateX(-50%)";
+
+    /* 🔥 3× BIGGER */
+    el.style.fontSize = "42px";
+    el.style.padding = "18px 26px";
+
+    /* visual */
+    el.style.fontFamily = "monospace";
+    el.style.fontWeight = "800";
+    el.style.color = "white";
+    el.style.textAlign = "center";
+
+    /* glass + glow */
+    el.style.background = "rgba(255,255,255,0.18)";
+    el.style.backdropFilter = "blur(14px)";
+    el.style.webkitBackdropFilter = "blur(14px)";
+
+    el.style.border = "1px solid rgba(255,255,255,0.35)";
+    el.style.borderRadius = "18px";
+
+    el.style.boxShadow =
+      "0 10px 30px rgba(0,0,0,0.35), 0 0 20px rgba(255,255,255,0.25)";
+
+    el.style.zIndex = "999999";
+
+    /* mobile safe */
+    el.style.maxWidth = "90vw";
+    el.style.whiteSpace = "nowrap";
 
     document.body.appendChild(el);
   }
@@ -106,7 +109,8 @@ function trainingHUD(msg) {
   el.textContent = msg;
 }
 
-/* ---------------- SAVE HUD (TOP CENTER - TEMP) ---------------- */
+
+
 function saveHUD(msg) {
   let el = document.getElementById("save-hud");
 
@@ -116,35 +120,45 @@ function saveHUD(msg) {
     document.body.appendChild(el);
   }
 
-  Object.assign(el.style, {
-    position: "fixed",
-    top: "20px",
-    left: "50%",
-    transform: "translateX(-50%)",
-    fontSize: "36px",
-    padding: "16px 24px",
-    fontFamily: "monospace",
-    fontWeight: "900",
-    color: "white",
-    textAlign: "center",
-    background: "rgba(0,255,120,0.25)",
-    border: "1px solid rgba(0,255,120,0.6)",
-    borderRadius: "18px",
-    backdropFilter: "blur(14px)",
-    webkitBackdropFilter: "blur(14px)",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.35), 0 0 25px rgba(0,255,120,0.35)",
-    zIndex: "999999"
-  });
+  el.style.position = "fixed";
+  el.style.top = "20px";
+  el.style.left = "50%";
+  el.style.transform = "translateX(-50%)";
+
+  /* 🔥 BIGGER THAN TRAINING HUD */
+  el.style.fontSize = "36px";
+  el.style.padding = "16px 24px";
+
+  el.style.fontFamily = "monospace";
+  el.style.fontWeight = "900";
+  el.style.color = "white";
+  el.style.textAlign = "center";
+
+  /* GREEN SUCCESS STYLE */
+  el.style.background = "rgba(0, 255, 120, 0.25)";
+  el.style.border = "1px solid rgba(0, 255, 120, 0.6)";
+  el.style.backdropFilter = "blur(14px)";
+  el.style.webkitBackdropFilter = "blur(14px)";
+
+  el.style.borderRadius = "18px";
+
+  el.style.boxShadow =
+    "0 10px 30px rgba(0,0,0,0.35), 0 0 25px rgba(0,255,120,0.35)";
+
+  el.style.zIndex = "999999";
 
   el.textContent = msg;
 
+  /* auto hide */
   clearTimeout(el._t);
-  el._t = setTimeout(() => el.remove(), 1200);
+  el._t = setTimeout(() => {
+    el.remove();
+  }, 1200);
 }
 
-/* =========================================================
-   ERROR HANDLER
-========================================================= */
+
+
+/* ---------------- ERROR OVERLAY ---------------- */
 window.onerror = (msg, src, line, col, err) => {
   document.body.innerHTML = `
     <div style="
@@ -164,57 +178,99 @@ window.onerror = (msg, src, line, col, err) => {
   `;
 };
 
-/* =========================================================
-   GESTURE DATABASE
-========================================================= */
-
-const DEFAULT_DB = {
-  version: 1,
-  meta: { created: Date.now(), updated: Date.now(), totalSamples: 0 },
-  basic: { PINCH: [], FIST: [], OPEN: [] },
-  motion: { UP: [], DOWN: [], LEFT: [], RIGHT: [] }
-};
+/* ---------------- GESTURE DATABASE ---------------- */
 
 let gestureDB;
 
-function initGestureDB() {
-  const saved = localStorage.getItem("gestureDB");
+/* default empty structure */
+const DEFAULT_DB = {
+  version: 1,
 
-  if (!saved) {
-    gestureDB = structuredClone(DEFAULT_DB);
-    return saveGestureDB();
+  meta: {
+    created: Date.now(),
+    updated: Date.now(),
+    totalSamples: 0
+  },
+
+  basic: {
+    PINCH: [],
+    FIST: [],
+    OPEN: []
+  },
+
+  motion: {
+    UP: [],
+    DOWN: [],
+    LEFT: [],
+    RIGHT: []
+  }
+};
+
+/* ---------------- LOAD OR CREATE DB ---------------- */
+
+function initGestureDB() {
+
+  const savedDB = localStorage.getItem("gestureDB");
+
+  /* DB EXISTS -> LOAD */
+  if (savedDB) {
+
+    try {
+      gestureDB = JSON.parse(savedDB);
+
+      console.log("Gesture DB loaded");
+      console.log(gestureDB);
+
+    } catch (err) {
+
+      console.error("DB corrupted, recreating");
+
+      gestureDB = structuredClone(DEFAULT_DB);
+
+      saveGestureDB();
+    }
+
   }
 
-  try {
-    gestureDB = JSON.parse(saved);
-    console.log("Gesture DB loaded");
-  } catch {
+  /* DB DOES NOT EXIST -> CREATE */
+  else {
+
+    console.log("No DB found, creating new DB");
+
     gestureDB = structuredClone(DEFAULT_DB);
+
     saveGestureDB();
   }
 }
 
+/* ---------------- SAVE DB ---------------- */
+
 function saveGestureDB() {
+
   gestureDB.meta.updated = Date.now();
-  localStorage.setItem("gestureDB", JSON.stringify(gestureDB));
+
+  localStorage.setItem(
+    "gestureDB",
+    JSON.stringify(gestureDB)
+  );
+
   console.log("Gesture DB saved");
 }
 
+/* ---------------- INIT ---------------- */
+
 initGestureDB();
 
-/* =========================================================
-   ELEMENTS
-========================================================= */
 
+
+
+/* ---------------- ELEMENTS ---------------- */
 const video = document.getElementById("video");
 const canvas = document.getElementById("skeleton-canvas");
 const ctx = canvas.getContext("2d");
 const loading = document.getElementById("loading-screen");
 
-/* =========================================================
-   ML (MediaPipe)
-========================================================= */
-
+/* ---------------- ML ---------------- */
 import {
   HandLandmarker,
   FilesetResolver
@@ -223,10 +279,7 @@ import {
 let handLandmarker = null;
 let mlReady = false;
 
-/* =========================================================
-   CAMERA + ML INIT
-========================================================= */
-
+/* ---------------- CAMERA ---------------- */
 async function startCamera() {
   try {
     status("Requesting camera...");
@@ -239,17 +292,25 @@ async function startCamera() {
     video.srcObject = stream;
     await video.play();
 
-    loading?.classList?.add("hidden");
-
     status("Camera started");
+
+    if (loading) loading.style.display = "none";
 
     initML();
     loop();
 
   } catch (err) {
-    status("Camera failed");
+    status("Camera failed: " + err.name);
+
     document.body.innerHTML = `
-      <div style="position:fixed;inset:0;background:black;color:orange;padding:20px;font-family:monospace;">
+      <div style="
+        position:fixed;
+        inset:0;
+        background:black;
+        color:orange;
+        padding:20px;
+        font-family:monospace;
+      ">
         <h3>Camera Failed</h3>
         <pre>${err.name}: ${err.message}</pre>
       </div>
@@ -257,6 +318,7 @@ async function startCamera() {
   }
 }
 
+/* ---------------- ML INIT ---------------- */
 async function initML() {
   try {
     status("Loading AI...");
@@ -264,6 +326,8 @@ async function initML() {
     const vision = await FilesetResolver.forVisionTasks(
       "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
     );
+
+    status("Model loading...");
 
     handLandmarker = await HandLandmarker.createFromOptions(vision, {
       baseOptions: {
@@ -281,97 +345,127 @@ async function initML() {
   } catch (e) {
     status("AI FAILED: " + e.message);
   }
+  status("READY - tracking active");
 }
 
-/* =========================================================
-   HAND PROCESSING
-========================================================= */
+/* ---------------- RESIZE ---------------- */
+function resizeCanvas() {
+  if (!video.videoWidth) return;
 
+  if (
+    canvas.width !== video.videoWidth ||
+    canvas.height !== video.videoHeight
+  ) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+  }
+}
+
+/* ---------------- DRAW HANDS ---------------- */
 let gestureHistory = [];
 const HISTORY_SIZE = 10;
 
-const dist = (a, b) =>
-  Math.hypot(a.x - b.x, a.y - b.y);
+function dist(a, b) {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
 
-const mode = (arr) => {
-  const map = {};
-  let best = arr[0], max = 0;
+function normalize(value, wristToMiddle) {
+  return value / wristToMiddle;
+}
+
+function mode(arr) {
+  const count = {};
+  let best = arr[0];
+  let max = 0;
 
   for (const v of arr) {
-    map[v] = (map[v] || 0) + 1;
-    if (map[v] > max) {
-      max = map[v];
+    count[v] = (count[v] || 0) + 1;
+    if (count[v] > max) {
+      max = count[v];
       best = v;
     }
   }
+
   return best;
-};
-
-/* =========================================================
-   MAIN LOOP
-========================================================= */
-
-function loop() {
-  requestAnimationFrame(loop);
-  drawHands();
 }
-
-function resizeCanvas() {
-  if (!video.videoWidth) return;
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-}
-
-/* =========================================================
-   DRAW + INFERENCE
-========================================================= */
 
 function drawHands() {
+
   if (!mlReady || !handLandmarker) return;
   if (video.readyState < 2) return;
 
   resizeCanvas();
 
-  const result = handLandmarker.detectForVideo(video, performance.now());
+  const result = handLandmarker.detectForVideo(
+    video,
+    performance.now()
+  );
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  if (!result.landmarks?.length) {
+  // ---------------- NO HAND ----------------
+  if (!result.landmarks || result.landmarks.length === 0) {
+
     gestureHUD("NO HAND");
+
     status("RUNNING (0 hands)");
+
     gestureHistory.length = 0;
+
     return;
   }
 
+  // ---------------- HAND ----------------
   const hand = result.landmarks[0];
 
-  const [thumb, index, middle, ring, pinky] =
-    [4, 8, 12, 16, 20].map(i => hand[i]);
-
+  const thumb = hand[4];
+  const index = hand[8];
+  const middle = hand[12];
+  const ring = hand[16];
+  const pinky = hand[20];
   const wrist = hand[0];
+
   const handScale = dist(wrist, hand[9]);
 
+  // ---------------- FEATURES ----------------
   const features = {
-    pinch: dist(thumb, index) / handScale,
-    indexCurl: dist(index, hand[5]) / handScale,
-    middleCurl: dist(middle, hand[9]) / handScale,
-    ringCurl: dist(ring, hand[13]) / handScale,
-    pinkyCurl: dist(pinky, hand[17]) / handScale
+
+    pinch:
+      dist(thumb, index) / handScale,
+
+    indexCurl:
+      dist(index, hand[5]) / handScale,
+
+    middleCurl:
+      dist(middle, hand[9]) / handScale,
+
+    ringCurl:
+      dist(ring, hand[13]) / handScale,
+
+    pinkyCurl:
+      dist(pinky, hand[17]) / handScale
   };
 
   features.open =
-    (features.indexCurl +
-     features.middleCurl +
-     features.ringCurl +
-     features.pinkyCurl) / 4;
+    (
+      features.indexCurl +
+      features.middleCurl +
+      features.ringCurl +
+      features.pinkyCurl
+    ) / 4;
 
-  /* ---------------- CLASSIFICATION ---------------- */
-
-  let best = "UNKNOWN";
+  // ---------------- DB MATCHING ----------------
+  let bestGesture = "UNKNOWN";
   let bestScore = Infinity;
 
   for (const label in gestureDB.basic) {
-    for (const sample of gestureDB.basic[label]) {
+
+    const samples = gestureDB.basic[label];
+
+    for (const sample of samples) {
+
       const f = sample.features;
 
       const score =
@@ -384,69 +478,398 @@ function drawHands() {
 
       if (score < bestScore) {
         bestScore = score;
-        best = label;
+        bestGesture = label;
       }
     }
   }
 
-  const confidence = Math.max(0, Math.min(100, Math.round((1 - bestScore) * 100)));
+  // ---------------- CONFIDENCE ----------------
+  let confidence =
+    Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round((1 - bestScore) * 100)
+      )
+    );
 
-  gestureHistory.push(best);
-  if (gestureHistory.length > HISTORY_SIZE) gestureHistory.shift();
+  // ---------------- SMOOTHING ----------------
+  gestureHistory.push(bestGesture);
 
-  const stable = mode(gestureHistory);
+  if (gestureHistory.length > HISTORY_SIZE) {
+    gestureHistory.shift();
+  }
 
-  let fingers = 0;
-  if (features.indexCurl > 0.18) fingers++;
-  if (features.middleCurl > 0.18) fingers++;
-  if (features.ringCurl > 0.18) fingers++;
-  if (features.pinkyCurl > 0.18) fingers++;
-  if (thumb.x < hand[3].x) fingers++;
+  const stableGesture = mode(gestureHistory);
 
-  gestureHUD(`gesture: ${stable}\nconfidence: ${confidence}%\nfingers: ${fingers}`);
+  // ---------------- FINGER COUNT ----------------
+  let fingersUp = 0;
 
-  status(`RUNNING (1 hand) ${stable} ${confidence}%`);
+  if (features.indexCurl > 0.18) fingersUp++;
+  if (features.middleCurl > 0.18) fingersUp++;
+  if (features.ringCurl > 0.18) fingersUp++;
+  if (features.pinkyCurl > 0.18) fingersUp++;
 
+  // thumb special case
+  if (thumb.x < hand[3].x) {
+    fingersUp++;
+  }
+
+  // ---------------- HUD ----------------
+  gestureHUD(
+    `gesture: ${stableGesture}
+    confidence: ${confidence}%
+    fingers: ${fingersUp}`
+  );
+
+  // ---------------- TRAINING ----------------
+  if (trainingActive && !trainingLocked) {
+
+    trainingBuffer.push({
+      ...features,
+      landmarks: hand
+    });
+
+    trainingHUD(
+      `RECORDING ${trainingBuffer.length}/${TRAIN_FRAMES}`
+    );
+
+    // ---------------- STOP CONDITION ----------------
+    if (trainingBuffer.length >= TRAIN_FRAMES) {
+
+      trainingLocked = true;
+      trainingActive = false;
+
+      const bufferCopy = trainingBuffer.slice();
+
+      setTimeout(() => {
+        askTrainingLabel(bufferCopy);
+      }, 0);
+    }
+  }
+
+  // ---------------- DRAW ----------------
   for (const p of hand) {
+
     ctx.beginPath();
-    ctx.arc(p.x * canvas.width, p.y * canvas.height, 6, 0, Math.PI * 2);
+
+    ctx.arc(
+      p.x * canvas.width,
+      p.y * canvas.height,
+      6,
+      0,
+      Math.PI * 2
+    );
+
     ctx.fillStyle = "cyan";
+
     ctx.fill();
   }
+
+  status(
+    `RUNNING (1 hand) ${stableGesture} ${confidence}%`
+  );
 }
 
-/* =========================================================
-   START
-========================================================= */
+/*---------------Label and save------------------*/
 
+function askTrainingLabel(buffer) {
+
+  const overlay = document.createElement("div");
+  overlay.style.position = "fixed";
+  overlay.style.inset = "0";
+  overlay.style.background = "rgba(0,0,0,0.85)";
+  overlay.style.zIndex = "999999";
+  overlay.style.display = "flex";
+  overlay.style.flexDirection = "column";
+  overlay.style.justifyContent = "center";
+  overlay.style.alignItems = "center";
+  overlay.style.gap = "12px";
+  overlay.style.fontFamily = "monospace";
+  overlay.style.color = "white";
+
+  // ---------------- TITLE ----------------
+  const title = document.createElement("div");
+  title.textContent = "SAVE TRAINING SAMPLE";
+  title.style.fontSize = "20px";
+  title.style.marginBottom = "10px";
+
+  // ---------------- CATEGORY ----------------
+  const categorySelect = document.createElement("select");
+  categorySelect.style.padding = "8px";
+  categorySelect.style.fontSize = "16px";
+
+  ["BASIC", "MOTION"].forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c;
+    opt.textContent = c;
+    categorySelect.appendChild(opt);
+  });
+
+  // ---------------- LABEL ----------------
+  const labelSelect = document.createElement("select");
+  labelSelect.style.padding = "8px";
+  labelSelect.style.fontSize = "16px";
+
+  const newLabelInput = document.createElement("input");
+  newLabelInput.placeholder = "New label name";
+  newLabelInput.style.padding = "8px";
+  newLabelInput.style.fontSize = "16px";
+  newLabelInput.style.display = "none";
+
+  // ---------------- REFRESH LABELS ----------------
+  function refreshLabels() {
+
+    labelSelect.innerHTML = "";
+
+    const dbSection =
+      categorySelect.value === "MOTION"
+        ? gestureDB.motion
+        : gestureDB.basic;
+
+    Object.keys(dbSection).forEach(k => {
+      const opt = document.createElement("option");
+      opt.value = k;
+      opt.textContent = k;
+      labelSelect.appendChild(opt);
+    });
+
+    const newOpt = document.createElement("option");
+    newOpt.value = "__new__";
+    newOpt.textContent = "+ NEW LABEL";
+    labelSelect.appendChild(newOpt);
+  }
+
+  categorySelect.onchange = refreshLabels;
+  refreshLabels();
+
+  labelSelect.onchange = () => {
+    newLabelInput.style.display =
+      labelSelect.value === "__new__" ? "block" : "none";
+  };
+
+  // ---------------- BUTTONS ----------------
+  const btnRow = document.createElement("div");
+  btnRow.style.display = "flex";
+  btnRow.style.gap = "10px";
+
+  const saveBtn = document.createElement("button");
+  saveBtn.textContent = "SAVE";
+  saveBtn.style.padding = "10px 20px";
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.textContent = "CANCEL";
+  cancelBtn.style.padding = "10px 20px";
+
+  cancelBtn.onclick = () => {
+    overlay.remove();
+    trainingLocked = false;
+  };
+
+  saveBtn.onclick = () => {
+
+    const category = categorySelect.value;
+
+    let label =
+      labelSelect.value === "__new__"
+        ? newLabelInput.value.trim()
+        : labelSelect.value;
+
+    if (!label) return;
+
+    label = label.toUpperCase();
+
+    saveRecordedSample(category, label, buffer);
+
+    overlay.remove();
+  };
+
+  btnRow.appendChild(saveBtn);
+  btnRow.appendChild(cancelBtn);
+
+  // ---------------- BUILD UI ----------------
+  overlay.appendChild(title);
+  overlay.appendChild(categorySelect);
+  overlay.appendChild(labelSelect);
+  overlay.appendChild(newLabelInput);
+  overlay.appendChild(btnRow);
+
+  document.body.appendChild(overlay);
+}
+
+
+function saveRecordedSample(category, label, buffer) {
+
+  const avg = (k) =>
+    buffer.reduce((sum, f) => sum + f[k], 0) / buffer.length;
+
+  const sample = {
+    features: {
+      pinch: avg("pinch"),
+      open: avg("open"),
+      indexCurl: avg("indexCurl"),
+      middleCurl: avg("middleCurl"),
+      ringCurl: avg("ringCurl"),
+      pinkyCurl: avg("pinkyCurl")
+    },
+
+    landmarks: buffer.map(f => f.landmarks),
+    timestamp: Date.now()
+  };
+
+  const targetDB =
+    category === "MOTION"
+      ? gestureDB.motion
+      : gestureDB.basic;
+
+  targetDB[label] = targetDB[label] || [];
+  targetDB[label].push(sample);
+
+  saveGestureDB();
+
+  trainingHUD(`SAVED ${category}:${label}`);
+
+  trainingLocked = false;
+}
+
+/*----------------------TRAINING BUTTON--------------------------*/
+let trainingActive = false;
+let trainingGesture = null;
+let trainingBuffer = [];
+let TRAIN_FRAMES = 20;
+let trainingLocked = false;
+
+document.getElementById("train-btn").onclick = () => {
+
+  if (trainingActive || trainingLocked) return;
+
+  trainingActive = true;
+  trainingLocked = false;
+  trainingBuffer = [];
+
+  trainingHUD("RECORDING...");
+};
+
+
+
+
+
+/* ---------------- LOOP ---------------- */
+function loop() {
+  requestAnimationFrame(loop);
+  drawHands();
+}
+
+
+/* ---------------- START ---------------- */
 window.addEventListener("load", startCamera);
 
 
-/* =========================================================
-   TRAIN BUTTON LOGIC
-========================================================= */
+/* ---------------- TRAIN BUTTON UI STYLE ---------------- */
+const btn = document.getElementById("train-btn");
 
-let trainingActive = false;
-let trainingLocked = false;
-let trainingBuffer = [];
-let TRAIN_FRAMES = 20;
+/* ---------------- BASE STYLE ---------------- */
+btn.style.position = "fixed";
+btn.style.left = "20px";
+btn.style.top = "70vh";
 
-window.addEventListener("load", () => {
-  const btn = document.getElementById("train-btn");
+/* ---- SIZE (bigger + easier mobile tap) ---- */
+btn.style.padding = "18px 26px";
+btn.style.fontSize = "18px";
 
-  if (!btn) {
-    console.error("TRAIN BUTTON NOT FOUND");
-    return;
+/* ---- PERFECT ROUND SHAPE ---- */
+btn.style.borderRadius = "999px";
+
+/* ---- BRIGHTER GLASS LOOK ---- */
+btn.style.background = "rgba(255, 255, 255, 0.35)";
+btn.style.border = "1px solid rgba(255, 255, 255, 0.6)";
+
+/* ---- MORE GLOW / VISIBILITY ---- */
+btn.style.boxShadow = "0 8px 25px rgba(0,0,0,0.35), 0 0 18px rgba(255,255,255,0.25)";
+
+/* ---- TEXT POP ---- */
+btn.style.color = "white";
+btn.style.fontWeight = "700";
+
+/* ---- GLASS EFFECT (better blur) ---- */
+btn.style.backdropFilter = "blur(14px)";
+btn.style.webkitBackdropFilter = "blur(14px)";
+
+/* ---- MOBILE TOUCH FEEL ---- */
+btn.style.userSelect = "none";
+btn.style.touchAction = "none";
+btn.style.cursor = "grab";
+
+/* ---- OPTIONAL: subtle animation feel ---- */
+btn.style.transition = "transform 0.08s ease, box-shadow 0.2s ease";
+
+
+
+/* ---------------- STATE ---------------- */
+let isDragging = false;
+let startX = 0;
+let startY = 0;
+let startLeft = 0;
+let startTop = 0;
+
+/* movement threshold for tap vs drag */
+const DRAG_THRESHOLD = 6;
+
+/* ---------------- POINTER DOWN ---------------- */
+btn.addEventListener("pointerdown", (e) => {
+  isDragging = false;
+
+  startX = e.clientX;
+  startY = e.clientY;
+
+  startLeft = btn.offsetLeft;
+  startTop = btn.offsetTop;
+
+  btn.setPointerCapture(e.pointerId);
+  btn.style.cursor = "grabbing";
+});
+
+/* ---------------- POINTER MOVE ---------------- */
+btn.addEventListener("pointermove", (e) => {
+  if (startX === null) return;
+
+  const dx = e.clientX - startX;
+  const dy = e.clientY - startY;
+
+  // only become drag AFTER movement threshold
+  if (!isDragging && Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
+    isDragging = true;
   }
 
-  btn.onclick = () => {
-    if (trainingActive || trainingLocked) return;
+  if (!isDragging) return;
 
-    trainingActive = true;
-    trainingLocked = false;
-    trainingBuffer = [];
+  btn.style.left = startLeft + dx + "px";
+  btn.style.top = startTop + dy + "px";
+});
 
-    trainingHUD("RECORDING...");
-    console.log("TRAIN STARTED");
-  };
+/* ---------------- POINTER UP ---------------- */
+btn.addEventListener("pointerup", (e) => {
+  btn.releasePointerCapture(e.pointerId);
+  btn.style.cursor = "grab";
+
+  // IMPORTANT:
+  // if it was NOT dragged → treat as tap
+  if (!isDragging) {
+    btn.click(); // triggers your existing training logic
+  }
+
+  isDragging = false;
+});
+
+
+btn.addEventListener("pointerdown", () => {
+  btn.style.transform = "scale(0.96)";
+});
+
+btn.addEventListener("pointerup", () => {
+  btn.style.transform = "scale(1)";
+});
+
+btn.addEventListener("pointercancel", () => {
+  btn.style.transform = "scale(1)";
 });
