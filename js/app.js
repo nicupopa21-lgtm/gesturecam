@@ -901,8 +901,6 @@ function openDBViewer() {
   const old = document.getElementById("db-viewer");
   if (old) old.remove();
 
-  const db = JSON.parse(localStorage.getItem("gestureDB") || "{}");
-
   const overlay = document.createElement("div");
   overlay.id = "db-viewer";
 
@@ -918,6 +916,14 @@ function openDBViewer() {
   const title = document.createElement("h2");
   title.textContent = "GESTURE DATABASE";
   overlay.appendChild(title);
+
+  const db = JSON.parse(localStorage.getItem("gestureDB") || "{}");
+
+  function saveAndRefresh(newDB) {
+    localStorage.setItem("gestureDB", JSON.stringify(newDB));
+    gestureDB = newDB; // keep runtime synced
+    openDBViewer();
+  }
 
   function renderSection(sectionName, section) {
     const h = document.createElement("h3");
@@ -942,11 +948,13 @@ function openDBViewer() {
       delLabelBtn.style.marginLeft = "10px";
 
       delLabelBtn.onclick = () => {
-        if (confirm(`Delete ALL ${sectionName}:${label}?`)) {
-          arr.length = 0;
-          saveGestureDB();
-          openDBViewer();
-        }
+        if (!confirm(`Delete ALL ${sectionName}:${label}?`)) return;
+
+        const newDB = JSON.parse(localStorage.getItem("gestureDB"));
+
+        newDB[sectionName][label] = [];
+
+        saveAndRefresh(newDB);
       };
 
       block.appendChild(labelTitle);
@@ -958,28 +966,26 @@ function openDBViewer() {
         row.style.fontSize = "12px";
         row.style.opacity = "0.9";
 
-        row.textContent = `#${i} | ${item.timestamp}`;
+        row.textContent = `#${i} | ${item.timestamp || "no-ts"}`;
 
         const delBtn = document.createElement("button");
         delBtn.textContent = "X";
         delBtn.style.marginLeft = "10px";
 
         delBtn.onclick = () => {
-          const db = JSON.parse(localStorage.getItem("gestureDB"));
-        
-          const section = db[sectionName]; // "basic" or "motion"
-          const realArr = section[label];
-        
-          // find by timestamp (safe unique key)
-          const targetIndex = realArr.findIndex(x => x.timestamp === item.timestamp);
-        
-          if (targetIndex !== -1) {
-            realArr.splice(targetIndex, 1);
+          const newDB = JSON.parse(localStorage.getItem("gestureDB"));
+
+          const realArr = newDB[sectionName][label];
+
+          const idx = realArr.findIndex(
+            x => x.timestamp === item.timestamp
+          );
+
+          if (idx !== -1) {
+            realArr.splice(idx, 1);
           }
-        
-          localStorage.setItem("gestureDB", JSON.stringify(db));
-        
-          openDBViewer();
+
+          saveAndRefresh(newDB);
         };
 
         row.appendChild(delBtn);
