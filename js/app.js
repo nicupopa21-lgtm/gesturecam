@@ -574,48 +574,55 @@ function drawHands() {
     );
   const isPinching = stableGesture === "PINCH";
 
-  // --- PINCH STATE TOGGLE ---
+  // --- PINCH START ---
   if (isPinching && !pinchActive) {
-  pinchActive = true;
-
-  createOrb();
-
-  // store hand start position (NORMALIZED SCREEN SPACE)
-  pinchStartHand = {
-    x: wrist.x,
-    y: wrist.y
-  };
-
-  // store orb start position (screen space)
-  orbStartPos = {
-    x: window.innerWidth / 2,
-    y: window.innerHeight / 2
-  };
-}
+    pinchActive = true;
+    createOrb();
+  
+    const x = MIRROR ? (1 - wrist.x) : wrist.x;
+    const y = wrist.y;
+  
+    pinchStartHand = {
+      x,
+      y
+    };
+  
+    orbStartPos = {
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2
+    };
   }
   
+  
+  // --- PINCH END ---
   if (!isPinching && pinchActive) {
-  pinchActive = false;
-
-  removeOrb();
-
-  pinchStartHand = null;
-  orbStartPos = null;
-}
+    pinchActive = false;
   
-  // --- ORB FOLLOW (IMPORTANT: AFTER TOGGLE) ---
-  if (pinchActive && orbEl) {
+    removeOrb();
   
-    const xNorm = MIRROR ? (1 - wrist.x) : wrist.x;
-    const yNorm = wrist.y;
-    
-    const x = xNorm * window.innerWidth;
-    const y = yNorm * window.innerHeight;
-  
-    orbEl.style.left = x + "px";
-    orbEl.style.top = y + "px";
-    orbEl.style.transform = "translate(-50%, -50%)";
+    pinchStartHand = null;
+    orbStartPos = null;
   }
+  
+  
+  // --- ORB FOLLOW (runs every frame while active) ---
+  if (pinchActive && orbEl && pinchStartHand && orbStartPos) {
+  
+    const x = MIRROR ? (1 - wrist.x) : wrist.x;
+    const y = wrist.y;
+  
+    const dx = x - pinchStartHand.x;
+    const dy = y - pinchStartHand.y;
+  
+    const sensitivity = 2.2;
+  
+    const newX = orbStartPos.x + dx * window.innerWidth * sensitivity;
+    const newY = orbStartPos.y + dy * window.innerHeight * sensitivity;
+  
+    orbEl.style.left = newX + "px";
+    orbEl.style.top = newY + "px";
+    orbEl.style.transform = "translate(-50%, -50%)";
+}
   // ---------------- TRAINING ----------------
   if (trainingActive && !trainingLocked) {
 
