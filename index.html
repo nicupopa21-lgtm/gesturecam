@@ -6,57 +6,75 @@
 <title>GestureCam</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
 
+<!-- CAMERA -->
 <div id="camera-container">
   <video id="video" autoplay muted playsinline></video>
   <canvas id="skeleton-canvas"></canvas>
 
+  <!-- SIMPLE HUD -->
   <div id="hud">
-    <div id="status-bar">
-      <div class="pill">
-        <div class="dot" id="ml-dot"></div>
-        <span id="ml-status">Loading AI...</span>
-      </div>
-      <div class="pill" id="zoom-pill">1x</div>
+
+    <div id="ml-status" style="
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 6px 10px;
+      font-family: monospace;
+      font-size: 12px;
+      z-index: 9999;
+    ">
+      Loading AI...
     </div>
 
-    <div id="confidence-hud">
-      <div id="conf-label">—</div>
-      <div id="conf-bar-track"><div id="conf-bar-fill"></div></div>
-      <div id="conf-pct">—</div>
+    <div id="gesture-hud" style="
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.7);
+      color: yellow;
+      padding: 8px 12px;
+      font-size: 18px;
+      font-weight: bold;
+      z-index: 9999;
+      font-family: monospace;
+    ">
+      —
     </div>
 
-    <div id="bottom-controls">
-      <button id="gallery-btn">🖼️</button>
-      <div id="shutter"><div id="shutter-inner"></div></div>
-      <button id="train-nav-btn">🤖</button>
+    <div id="training-hud" style="
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.7);
+      color: lime;
+      padding: 6px 10px;
+      font-family: monospace;
+      font-size: 12px;
+      z-index: 9999;
+    ">
+      TRAIN OFF
     </div>
-  </div>
 
-  <div id="loading-screen">
-    <div class="spinner"></div>
-    <div>Loading GestureCam...</div>
   </div>
 </div>
 
-<div id="bottom-panel">
-  <div id="tab-bar">
-    <div class="tab active" data-tab="gestures">Gestures</div>
-    <div class="tab" data-tab="photos">Photos</div>
-  </div>
+<!-- CONTROLS -->
+<button id="train-btn" style="
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+  padding: 10px;
+  z-index: 9999;
+">
+  TRAIN
+</button>
 
-  <div class="tab-content active" id="tab-gestures">
-    <div id="gestures-list"></div>
-    <button id="train-btn">Train Model</button>
-    <div id="train-status"></div>
-  </div>
+<script type="module" src="./js/app.js?v=3"></script>
 
-  <div class="tab-content" id="tab-photos">
-    <div id="photos-grid"></div>
-  </div>
-</div>
-
-<script type="module" src="./js/app.js?v=2"></script>
 </body>
 </html>
