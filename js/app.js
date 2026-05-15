@@ -112,7 +112,7 @@ async function initML() {
       baseOptions: {
         modelAssetPath:
           "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
-        delegate: "CPU"
+        delegate: "GPU"
       },
       runningMode: "VIDEO",
       numHands: 1
