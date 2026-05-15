@@ -18,12 +18,12 @@ export function startLoop(state) {
     requestAnimationFrame(loop);
 
     if (!state.mlReady || !state.videoReady) return;
-    if (!aiState.handLandmarker) return;
+    if (!state.handLandmarker) return;
     if (video.readyState < 2) return;
 
     resizeCanvas();
 
-    const result = aiState.handLandmarker.detectForVideo(
+    const result = state.handLandmarker.detectForVideo(
       video,
       performance.now()
     );
