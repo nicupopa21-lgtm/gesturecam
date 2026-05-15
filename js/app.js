@@ -62,6 +62,8 @@ function gestureHUD(text) {
   `;
 }
 
+
+
 function trainingHUD(msg) {
   let el = document.getElementById("training-hud");
 
@@ -106,6 +108,56 @@ function trainingHUD(msg) {
 
   el.textContent = msg;
 }
+
+
+
+function saveHUD(msg) {
+  let el = document.getElementById("save-hud");
+
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "save-hud";
+    document.body.appendChild(el);
+  }
+
+  el.style.position = "fixed";
+  el.style.top = "20px";
+  el.style.left = "50%";
+  el.style.transform = "translateX(-50%)";
+
+  /* 🔥 BIGGER THAN TRAINING HUD */
+  el.style.fontSize = "36px";
+  el.style.padding = "16px 24px";
+
+  el.style.fontFamily = "monospace";
+  el.style.fontWeight = "900";
+  el.style.color = "white";
+  el.style.textAlign = "center";
+
+  /* GREEN SUCCESS STYLE */
+  el.style.background = "rgba(0, 255, 120, 0.25)";
+  el.style.border = "1px solid rgba(0, 255, 120, 0.6)";
+  el.style.backdropFilter = "blur(14px)";
+  el.style.webkitBackdropFilter = "blur(14px)";
+
+  el.style.borderRadius = "18px";
+
+  el.style.boxShadow =
+    "0 10px 30px rgba(0,0,0,0.35), 0 0 25px rgba(0,255,120,0.35)";
+
+  el.style.zIndex = "999999";
+
+  el.textContent = msg;
+
+  /* auto hide */
+  clearTimeout(el._t);
+  el._t = setTimeout(() => {
+    el.remove();
+  }, 1200);
+}
+
+
+
 /* ---------------- ERROR OVERLAY ---------------- */
 window.onerror = (msg, src, line, col, err) => {
   document.body.innerHTML = `
