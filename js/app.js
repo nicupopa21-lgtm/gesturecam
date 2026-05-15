@@ -965,8 +965,20 @@ function openDBViewer() {
         delBtn.style.marginLeft = "10px";
 
         delBtn.onclick = () => {
-          arr.splice(i, 1);
-          saveGestureDB();
+          const db = JSON.parse(localStorage.getItem("gestureDB"));
+        
+          const section = db[sectionName]; // "basic" or "motion"
+          const realArr = section[label];
+        
+          // find by timestamp (safe unique key)
+          const targetIndex = realArr.findIndex(x => x.timestamp === item.timestamp);
+        
+          if (targetIndex !== -1) {
+            realArr.splice(targetIndex, 1);
+          }
+        
+          localStorage.setItem("gestureDB", JSON.stringify(db));
+        
           openDBViewer();
         };
 
