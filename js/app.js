@@ -525,7 +525,7 @@ function drawHands() {
       direction = "NONE";
     } 
     else if (Math.abs(dx) > Math.abs(dy)) {
-      direction = dx > 0 ? "RIGHT" : "LEFT";
+      direction = dx > 0 ? "LEFT" : "RIGHT";
     } 
     else {
       direction = dy > 0 ? "DOWN" : "UP";
