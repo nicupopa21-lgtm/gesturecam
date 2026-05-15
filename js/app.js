@@ -1,4 +1,4 @@
-import { initAI, aiState } from "./ai.js";
+import { initAI, state } from "./ai.js";
 import { initCamera, cameraState } from "./camera.js";
 import { startLoop } from "./gestures.js";
 
