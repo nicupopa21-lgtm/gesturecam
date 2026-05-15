@@ -1,28 +1,29 @@
-import { initCamera, video } from "./camera.js";
-import { initAI, handLandmarker } from "./ai.js";
+import { initCamera } from "./camera.js";
+import { initAI } from "./ai.js";
 import { startLoop } from "./gestures.js";
-import { loadAll } from "./storage.js";
 
-export const state = {
-  mlReady: false,
-  videoReady: false,
-  classifier: null,
-  photos: []
-};
+function showError(e) {
+  console.error(e);
+  alert("Init error: " + e.message);
+}
 
 async function init() {
-  loadAll(state);
+  try {
+    console.log("GestureCam starting...");
 
-  await initCamera(state);
-  await initAI(state);
+    await initCamera();
+    await initAI();
 
-  state.mlReady = true;
+    console.log("Camera + AI ready");
 
-  document.getElementById("ml-status").textContent = "AI Ready";
-  document.getElementById("ml-dot").classList.add("active");
-  document.getElementById("loading-screen").style.display = "none";
+    startLoop();
 
-  startLoop(state);
+    const loader = document.getElementById("loading-screen");
+    if (loader) loader.classList.add("hidden");
+
+  } catch (e) {
+    showError(e);
+  }
 }
 
 init();
