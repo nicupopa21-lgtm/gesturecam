@@ -68,6 +68,92 @@ window.onerror = (msg, src, line, col, err) => {
   `;
 };
 
+/* ---------------- GESTURE DATABASE ---------------- */
+
+let gestureDB;
+
+/* default empty structure */
+const DEFAULT_DB = {
+  version: 1,
+
+  meta: {
+    created: Date.now(),
+    updated: Date.now(),
+    totalSamples: 0
+  },
+
+  basic: {
+    PINCH: [],
+    FIST: [],
+    OPEN: []
+  },
+
+  motion: {
+    UP: [],
+    DOWN: [],
+    LEFT: [],
+    RIGHT: []
+  }
+};
+
+/* ---------------- LOAD OR CREATE DB ---------------- */
+
+function initGestureDB() {
+
+  const savedDB = localStorage.getItem("gestureDB");
+
+  /* DB EXISTS -> LOAD */
+  if (savedDB) {
+
+    try {
+      gestureDB = JSON.parse(savedDB);
+
+      console.log("Gesture DB loaded");
+      console.log(gestureDB);
+
+    } catch (err) {
+
+      console.error("DB corrupted, recreating");
+
+      gestureDB = structuredClone(DEFAULT_DB);
+
+      saveGestureDB();
+    }
+
+  }
+
+  /* DB DOES NOT EXIST -> CREATE */
+  else {
+
+    console.log("No DB found, creating new DB");
+
+    gestureDB = structuredClone(DEFAULT_DB);
+
+    saveGestureDB();
+  }
+}
+
+/* ---------------- SAVE DB ---------------- */
+
+function saveGestureDB() {
+
+  gestureDB.meta.updated = Date.now();
+
+  localStorage.setItem(
+    "gestureDB",
+    JSON.stringify(gestureDB)
+  );
+
+  console.log("Gesture DB saved");
+}
+
+/* ---------------- INIT ---------------- */
+
+initGestureDB();
+
+
+
+
 /* ---------------- ELEMENTS ---------------- */
 const video = document.getElementById("video");
 const canvas = document.getElementById("skeleton-canvas");
