@@ -572,7 +572,29 @@ function drawHands() {
     direction: ${stableDirection}
     fingers: ${stableFingers}`
     );
+  const isPinching = stableGesture === "PINCH";
 
+  // --- PINCH STATE TOGGLE ---
+  if (isPinching && !pinchActive) {
+    pinchActive = true;
+    createOrb();
+  }
+  
+  if (!isPinching && pinchActive) {
+    pinchActive = false;
+    removeOrb();
+  }
+  
+  // --- ORB FOLLOW (IMPORTANT: AFTER TOGGLE) ---
+  if (pinchActive && orbEl) {
+  
+    const x = wrist.x * window.innerWidth;
+    const y = wrist.y * window.innerHeight;
+  
+    orbEl.style.left = x + "px";
+    orbEl.style.top = y + "px";
+    orbEl.style.transform = "translate(-50%, -50%)";
+  }
   // ---------------- TRAINING ----------------
   if (trainingActive && !trainingLocked) {
 
@@ -1059,4 +1081,48 @@ function openDBViewer() {
 }
 
 
+
+
+
 dbBtn.onclick = openDBViewer;
+
+
+/*---------------control try-------------*/
+
+
+
+ let pinchActive = false;
+ let orbEl = null;
+
+function createOrb() {
+  orbEl = document.createElement("div");
+
+  orbEl.style.position = "fixed";
+  orbEl.style.left = "50%";
+  orbEl.style.top = "50%";
+  orbEl.style.transform = "translate(-50%, -50%)";
+
+  orbEl.style.width = "24px";
+  orbEl.style.height = "24px";
+  orbEl.style.borderRadius = "50%";
+
+  orbEl.style.background = "rgba(255, 255, 0, 0.9)";
+  orbEl.style.boxShadow =
+    "0 0 15px rgba(255,255,0,0.9), 0 0 40px rgba(255,255,0,0.6)";
+
+  orbEl.style.zIndex = "999999";
+  orbEl.style.pointerEvents = "none";
+
+  document.body.appendChild(orbEl);
+}
+
+function removeOrb() {
+  if (orbEl) {
+    orbEl.remove();
+    orbEl = null;
+  }
+}
+
+
+
+
