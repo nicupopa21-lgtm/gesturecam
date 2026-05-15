@@ -1,62 +1,73 @@
-/* =========================
-   GESTURECAM - SINGLE FILE
-   ========================= */
+import {
+  HandLandmarker,
+  FilesetResolver
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest";
 
+/* ---------------- UI HELPERS ---------------- */
+function setStatus(msg) {
+  const el = document.getElementById("ml-status");
+  if (el) el.textContent = msg;
+}
+
+function setError(msg) {
+  let box = document.getElementById("error-box");
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "error-box";
+    box.style.position = "absolute";
+    box.style.bottom = "10px";
+    box.style.left = "10px";
+    box.style.right = "10px";
+    box.style.padding = "10px";
+    box.style.background = "rgba(255,0,0,0.85)";
+    box.style.color = "white";
+    box.style.fontSize = "12px";
+    box.style.zIndex = "9999";
+    box.style.borderRadius = "8px";
+    document.body.appendChild(box);
+  }
+  box.textContent = msg;
+}
+
+/* ---------------- DOM ---------------- */
 const video = document.getElementById("video");
 const canvas = document.getElementById("skeleton-canvas");
 const ctx = canvas.getContext("2d");
 
+/* ---------------- STATE ---------------- */
 const state = {
-  handLandmarker: null,
+  landmarker: null,
   mlReady: false,
-  stream: null
+  videoReady: false
 };
 
-/* =========================
-   CAMERA
-   ========================= */
-async function initCamera() {
+/* ---------------- CAMERA ---------------- */
+async function startCamera() {
   try {
-    const constraints = {
-      video: {
-        facingMode: { ideal: "user" }
-      },
+    setStatus("Starting camera...");
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user" },
       audio: false
-    };
+    });
 
-    try {
-      state.stream = await navigator.mediaDevices.getUserMedia(constraints);
-    } catch (e) {
-      // fallback for desktop / weird mobile cases
-      state.stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: false
-      });
-    }
+    video.srcObject = stream;
 
-    video.srcObject = state.stream;
-
-    await new Promise(resolve => {
+    return new Promise(resolve => {
       video.onloadedmetadata = () => {
         video.play();
+        state.videoReady = true;
+        setStatus("Camera ready");
         resolve();
       };
     });
-
   } catch (e) {
-    alert("Camera failed:\n" + e.message);
+    setError("Camera error: " + e.message);
     throw e;
   }
 }
 
-/* =========================
-   AI (MediaPipe)
-   ========================= */
-import {
-  HandLandmarker,
-  FilesetResolver
-} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
-
+/* ---------------- MODEL LOADER (SAFE FALLBACK) ---------------- */
 const MODEL_URLS = [
   "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float32/1/hand_landmarker.task",
   "https://storage.googleapis.com/mediapipe-tasks/hand_landmarker/hand_landmarker.task"
@@ -65,6 +76,7 @@ const MODEL_URLS = [
 async function loadModel(vision) {
   for (const url of MODEL_URLS) {
     try {
+      setStatus("Loading model...");
       return await HandLandmarker.createFromOptions(vision, {
         baseOptions: {
           modelAssetPath: url,
@@ -80,29 +92,38 @@ async function loadModel(vision) {
   throw new Error("All model URLs failed");
 }
 
+/* ---------------- AI INIT ---------------- */
 async function initAI() {
   try {
-    document.getElementById("ml-status").textContent = "Loading AI...";
+    setStatus("Loading AI runtime...");
 
     const vision = await FilesetResolver.forVisionTasks(
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
     );
 
-    state.handLandmarker = await loadModel(vision);
+    state.landmarker = await loadModel(vision);
     state.mlReady = true;
 
-    document.getElementById("ml-status").textContent = "AI Ready";
-    document.getElementById("ml-dot").classList.add("active");
+    setStatus("AI Ready");
+
+    const dot = document.getElementById("ml-dot");
+    if (dot) dot.classList.add("active");
 
   } catch (e) {
-    alert("AI failed:\n" + e.message);
-    console.error(e);
+    setError("AI init failed: " + e.message);
   }
 }
 
-/* =========================
-   DRAWING
-   ========================= */
+/* ---------------- RESIZE ---------------- */
+function resizeCanvas() {
+  const rect = video.getBoundingClientRect();
+  if (canvas.width !== rect.width || canvas.height !== rect.height) {
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+  }
+}
+
+/* ---------------- DRAW ---------------- */
 const CONNECTIONS = [
   [0,1],[1,2],[2,3],[3,4],
   [0,5],[5,6],[6,7],[7,8],
@@ -112,14 +133,6 @@ const CONNECTIONS = [
   [5,9],[9,13],[13,17]
 ];
 
-function resizeCanvas() {
-  const rect = video.getBoundingClientRect();
-  if (canvas.width !== rect.width || canvas.height !== rect.height) {
-    canvas.width = rect.width;
-    canvas.height = rect.height;
-  }
-}
-
 function draw(landmarks) {
   const w = canvas.width;
   const h = canvas.height;
@@ -127,55 +140,55 @@ function draw(landmarks) {
   ctx.clearRect(0, 0, w, h);
 
   ctx.strokeStyle = "cyan";
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2;
 
   for (const [a, b] of CONNECTIONS) {
+    const pa = landmarks[a];
+    const pb = landmarks[b];
+
     ctx.beginPath();
-    ctx.moveTo(landmarks[a].x * w, landmarks[a].y * h);
-    ctx.lineTo(landmarks[b].x * w, landmarks[b].y * h);
+    ctx.moveTo(pa.x * w, pa.y * h);
+    ctx.lineTo(pb.x * w, pb.y * h);
     ctx.stroke();
   }
 
   for (const p of landmarks) {
     ctx.beginPath();
-    ctx.arc(p.x * w, p.y * h, 5, 0, Math.PI * 2);
+    ctx.arc(p.x * w, p.y * h, 4, 0, Math.PI * 2);
     ctx.fillStyle = "white";
     ctx.fill();
   }
 }
 
-/* =========================
-   LOOP
-   ========================= */
+/* ---------------- LOOP ---------------- */
 function loop() {
   requestAnimationFrame(loop);
 
-  if (!state.mlReady) return;
+  if (!state.mlReady || !state.videoReady) return;
   if (video.readyState < 2) return;
 
   resizeCanvas();
 
-  const result = state.handLandmarker.detectForVideo(
-    video,
-    performance.now()
-  );
+  try {
+    const result = state.landmarker.detectForVideo(video, performance.now());
 
-  if (result?.landmarks?.length) {
-    draw(result.landmarks[0]);
+    if (result.landmarks?.length) {
+      draw(result.landmarks[0]);
+    }
+  } catch (e) {
+    setError("Detection error: " + e.message);
   }
 }
 
-/* =========================
-   BOOT
-   ========================= */
-async function boot() {
+/* ---------------- BOOT ---------------- */
+async function start() {
   try {
-    await initCamera();
+    await startCamera();
     await initAI();
     loop();
   } catch (e) {
-    alert("GestureCam failed to start:\n" + e.message);
+    setError("Startup failed: " + e.message);
   }
 }
 
-boot();
+start();
