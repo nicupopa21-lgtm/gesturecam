@@ -499,6 +499,7 @@ let trainingActive = false;
 let trainingGesture = null;
 let trainingBuffer = [];
 let TRAIN_FRAMES = 20;
+let trainingLocked = false;
 
 document.getElementById("train-btn").onclick = () => {
 
