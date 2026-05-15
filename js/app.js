@@ -430,9 +430,9 @@ function drawHands() {
 
   // ---------------- HUD ----------------
   gestureHUD(
-    `${stableGesture}
-${fingersUp} FINGERS
-${confidence}%`
+    `gesture: ${stableGesture}
+    confidence: ${confidence}%
+    fingers: ${fingersUp}`
   );
 
   // ---------------- TRAINING ----------------
