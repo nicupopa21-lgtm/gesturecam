@@ -695,44 +695,77 @@ window.addEventListener("load", startCamera);
 /* ---------------- TRAIN BUTTON UI STYLE ---------------- */
 const btn = document.getElementById("train-btn");
 
+/* ---------------- BASE STYLE ---------------- */
 btn.style.position = "fixed";
-btn.style.bottom = "20px";
 btn.style.left = "20px";
+btn.style.top = "70vh"; // important: no bottom
 btn.style.padding = "16px 22px";
-btn.style.borderRadius = "50px";
+btn.style.borderRadius = "999px";
 btn.style.background = "rgba(255,255,255,0.25)";
-btn.style.backdropFilter = "blur(8px)";
+btn.style.backdropFilter = "blur(10px)";
 btn.style.color = "white";
 btn.style.fontSize = "16px";
 btn.style.fontWeight = "bold";
 btn.style.border = "1px solid rgba(255,255,255,0.4)";
-btn.style.cursor = "grab";
 btn.style.zIndex = "999999";
 btn.style.userSelect = "none";
+btn.style.touchAction = "none"; // IMPORTANT for mobile
 
-/* ---------------- DRAG SUPPORT ---------------- */
-let dragging = false;
-let offsetX = 0;
-let offsetY = 0;
+/* ---------------- STATE ---------------- */
+let isDragging = false;
+let startX = 0;
+let startY = 0;
+let startLeft = 0;
+let startTop = 0;
 
-btn.addEventListener("mousedown", (e) => {
-  dragging = true;
-  offsetX = e.clientX - btn.offsetLeft;
-  offsetY = e.clientY - btn.offsetTop;
+/* movement threshold for tap vs drag */
+const DRAG_THRESHOLD = 6;
+
+/* ---------------- POINTER DOWN ---------------- */
+btn.addEventListener("pointerdown", (e) => {
+  isDragging = false;
+
+  startX = e.clientX;
+  startY = e.clientY;
+
+  startLeft = btn.offsetLeft;
+  startTop = btn.offsetTop;
+
+  btn.setPointerCapture(e.pointerId);
   btn.style.cursor = "grabbing";
 });
 
-window.addEventListener("mousemove", (e) => {
-  if (!dragging) return;
-  btn.style.left = (e.clientX - offsetX) + "px";
-  btn.style.top = (e.clientY - offsetY) + "px";
+/* ---------------- POINTER MOVE ---------------- */
+btn.addEventListener("pointermove", (e) => {
+  if (startX === null) return;
+
+  const dx = e.clientX - startX;
+  const dy = e.clientY - startY;
+
+  // only become drag AFTER movement threshold
+  if (!isDragging && Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
+    isDragging = true;
+  }
+
+  if (!isDragging) return;
+
+  btn.style.left = startLeft + dx + "px";
+  btn.style.top = startTop + dy + "px";
 });
 
-window.addEventListener("mouseup", () => {
-  dragging = false;
+/* ---------------- POINTER UP ---------------- */
+btn.addEventListener("pointerup", (e) => {
+  btn.releasePointerCapture(e.pointerId);
   btn.style.cursor = "grab";
-});
 
+  // IMPORTANT:
+  // if it was NOT dragged → treat as tap
+  if (!isDragging) {
+    btn.click(); // triggers your existing training logic
+  }
+
+  isDragging = false;
+});
 
 
 
