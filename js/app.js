@@ -43,9 +43,9 @@ window.addEventListener("unhandledrejection", (e) => {
 });
 
 // ---------- IMPORTS ----------
-import { initCamera } from "./camera.js";
-import { initAI } from "./ai.js";
-import { startLoop } from "./gestures.js";
+import { initCamera } from "camera.js";
+import { initAI } from "ai.js";
+import { startLoop } from "gestures.js";
 
 // ---------- SAFE INIT ----------
 async function init() {
