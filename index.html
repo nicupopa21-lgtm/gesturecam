@@ -4,22 +4,39 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GestureCam</title>
+
 <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
 
-<!-- CAMERA -->
+<!-- CAMERA STAGE -->
 <div id="camera-container">
+
   <video id="video" autoplay muted playsinline></video>
   <canvas id="skeleton-canvas"></canvas>
 
-  <!-- SIMPLE HUD -->
-<div id="hud"></div>
-<!-- CONTROLS -->
-<button id="train-btn">
-  TRAIN
-</button>
+  <!-- HUD LAYER (overlay system) -->
+  <div id="hud">
+
+    <!-- optional future status bar -->
+    <div id="status-bar"></div>
+
+    <!-- confidence display -->
+    <div id="confidence-hud">
+      <div id="conf-label"></div>
+      <div id="conf-bar-track">
+        <div id="conf-bar-fill"></div>
+      </div>
+      <div id="conf-pct"></div>
+    </div>
+
+  </div>
+
+  <!-- TRAIN BUTTON -->
+  <button id="train-btn">TRAIN</button>
+
+</div>
 
 <script type="module" src="./js/app.js?v=3"></script>
 
