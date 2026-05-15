@@ -420,3 +420,33 @@ function drawHands() {
 ========================================================= */
 
 window.addEventListener("load", startCamera);
+
+
+/* =========================================================
+   TRAIN BUTTON LOGIC
+========================================================= */
+
+let trainingActive = false;
+let trainingLocked = false;
+let trainingBuffer = [];
+let TRAIN_FRAMES = 20;
+
+window.addEventListener("load", () => {
+  const btn = document.getElementById("train-btn");
+
+  if (!btn) {
+    console.error("TRAIN BUTTON NOT FOUND");
+    return;
+  }
+
+  btn.onclick = () => {
+    if (trainingActive || trainingLocked) return;
+
+    trainingActive = true;
+    trainingLocked = false;
+    trainingBuffer = [];
+
+    trainingHUD("RECORDING...");
+    console.log("TRAIN STARTED");
+  };
+});
