@@ -65,7 +65,7 @@ async function startCamera() {
 window.addEventListener("load", startCamera);
 
 
-/*------------------------skeleton test----------------------/*
+/* -----------------------skeleton test--------------------- */
 
 const canvas = document.getElementById("skeleton-canvas");
 const ctx = canvas.getContext("2d");
