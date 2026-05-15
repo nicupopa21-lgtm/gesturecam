@@ -496,21 +496,28 @@ function drawHands() {
   const gesture = predictFromDB(gestureDB.basic, features);
   const fingers = predictFromDB(gestureDB.fingers, features);
 
-  trail.push({ x: wrist.x, y: wrist.y, t: performance.now() });
+  const MIRROR = true;
+
+  // convert to "real space" once
+  const x0 = MIRROR ? (1 - wrist.x) : wrist.x;
+  const y0 = wrist.y;
+  
+  trail.push({ x: x0, y: y0, t: performance.now() });
   
   if (trail.length > 10) trail.shift();
   
   let direction = "NONE";
   
-  // wait for enough samples (stability gate)
+  // wait for enough samples
   if (trail.length >= 5) {
   
     let sumX = 0;
     let sumY = 0;
   
-    // smooth motion over all points
+    // weighted smoothing (recent motion slightly stronger)
     for (let i = 1; i < trail.length; i++) {
       const weight = i / trail.length;
+  
       sumX += (trail[i].x - trail[i - 1].x) * weight;
       sumY += (trail[i].y - trail[i - 1].y) * weight;
     }
@@ -518,14 +525,13 @@ function drawHands() {
     const dx = sumX;
     const dy = sumY;
   
-    // optional dead-zone (prevents micro jitter)
     const threshold = 0.03;
   
     if (Math.abs(dx) < threshold && Math.abs(dy) < threshold) {
       direction = "NONE";
     } 
     else if (Math.abs(dx) > Math.abs(dy)) {
-      direction = dx > 0 ? "LEFT" : "RIGHT";
+      direction = dx > 0 ? "RIGHT" : "LEFT";
     } 
     else {
       direction = dy > 0 ? "DOWN" : "UP";
