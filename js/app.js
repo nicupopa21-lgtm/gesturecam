@@ -620,7 +620,7 @@ function askTrainingLabel(buffer) {
           ? gestureDB.motion
           : gestureDB.basic;
 
-    Object.keys(dbSection).forEach(k => {
+    Object.keys(dbSection || {}).forEach(k => {
       const opt = document.createElement("option");
       opt.value = k;
       opt.textContent = k;
