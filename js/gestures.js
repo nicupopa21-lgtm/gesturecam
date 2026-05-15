@@ -1,4 +1,4 @@
-import { aiState } from "./ai.js";
+import { state } from "./ai.js";
 import { video } from "./camera.js";
 
 const canvas = document.getElementById("skeleton-canvas");
