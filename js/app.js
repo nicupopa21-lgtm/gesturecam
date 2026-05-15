@@ -511,10 +511,10 @@ function drawHands() {
 
   // ---------------- HUD ----------------
   gestureHUD(
-    `gesture: ${stableGesture}
+  `gesture: ${stableGesture}
 motion: ${motion}
-fingers: ${fingers}`
-  );
+fingers: ${stableFingers}`
+);
 
   // ---------------- TRAINING ----------------
   if (trainingActive && !trainingLocked) {
