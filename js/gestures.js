@@ -1,28 +1,42 @@
-import { state } from "./ai.js";
+import { handLandmarker } from "./ai.js";
+import { video } from "./camera.js";
 import { drawSkeleton } from "./utils.js";
 
 const canvas = document.getElementById("skeleton-canvas");
 const ctx = canvas.getContext("2d");
 
-export function startLoop() {
+/**
+ * Main detection loop starter
+ * @param {object} state - shared app state from app.js
+ */
+export function startLoop(state) {
   function loop() {
     requestAnimationFrame(loop);
 
+    // safety checks (prevents crash + "stuck loading" issues)
     if (!state.mlReady) return;
-
-    const video = document.getElementById("video");
+    if (!state.videoReady) return;
     if (!video || video.readyState < 2) return;
 
-    const landmarker = state.handLandmarker;
-    if (!landmarker) return;
+    // match canvas to video size
+    const rect = video.getBoundingClientRect();
+    if (canvas.width !== rect.width || canvas.height !== rect.height) {
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    }
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    try {
+      const result = handLandmarker.detectForVideo(video, performance.now());
 
-    const result = landmarker.detectForVideo(video, performance.now());
-
-    if (result.landmarks?.length) {
-      drawSkeleton(ctx, canvas, result.landmarks[0]);
+      if (result.landmarks && result.landmarks.length > 0) {
+        const landmarks = result.landmarks[0];
+        drawSkeleton(ctx, canvas, landmarks);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    } catch (err) {
+      // prevents loop from silently dying
+      console.error("Hand detection error:", err);
     }
   }
 
