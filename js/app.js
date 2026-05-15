@@ -873,3 +873,123 @@ btn.addEventListener("pointerup", () => {
 btn.addEventListener("pointercancel", () => {
   btn.style.transform = "scale(1)";
 });
+
+
+/*----------------------db handle--------------*/
+const dbBtn = document.createElement("button");
+dbBtn.id = "db-btn";
+dbBtn.textContent = "DB";
+document.body.appendChild(dbBtn);
+
+dbBtn.style.position = "fixed";
+dbBtn.style.right = "20px";
+dbBtn.style.top = "70vh";
+
+dbBtn.style.padding = "14px 18px";
+dbBtn.style.borderRadius = "999px";
+dbBtn.style.fontSize = "16px";
+dbBtn.style.fontWeight = "700";
+
+dbBtn.style.background = "rgba(255,255,255,0.35)";
+dbBtn.style.color = "white";
+dbBtn.style.border = "1px solid rgba(255,255,255,0.6)";
+dbBtn.style.backdropFilter = "blur(14px)";
+dbBtn.style.zIndex = "999999";
+
+
+function openDBViewer() {
+  const old = document.getElementById("db-viewer");
+  if (old) old.remove();
+
+  const db = JSON.parse(localStorage.getItem("gestureDB") || "{}");
+
+  const overlay = document.createElement("div");
+  overlay.id = "db-viewer";
+
+  overlay.style.position = "fixed";
+  overlay.style.inset = "0";
+  overlay.style.background = "rgba(0,0,0,0.92)";
+  overlay.style.zIndex = "999999";
+  overlay.style.overflow = "auto";
+  overlay.style.padding = "20px";
+  overlay.style.fontFamily = "monospace";
+  overlay.style.color = "white";
+
+  const title = document.createElement("h2");
+  title.textContent = "GESTURE DATABASE";
+  overlay.appendChild(title);
+
+  function renderSection(sectionName, section) {
+    const h = document.createElement("h3");
+    h.textContent = sectionName.toUpperCase();
+    overlay.appendChild(h);
+
+    for (const label in section) {
+      const arr = section[label];
+
+      const block = document.createElement("div");
+      block.style.border = "1px solid rgba(255,255,255,0.2)";
+      block.style.margin = "10px 0";
+      block.style.padding = "10px";
+      block.style.borderRadius = "10px";
+
+      const labelTitle = document.createElement("div");
+      labelTitle.textContent = `${label} (${arr.length})`;
+      labelTitle.style.fontWeight = "700";
+
+      const delLabelBtn = document.createElement("button");
+      delLabelBtn.textContent = "DELETE ALL";
+      delLabelBtn.style.marginLeft = "10px";
+
+      delLabelBtn.onclick = () => {
+        if (confirm(`Delete ALL ${sectionName}:${label}?`)) {
+          arr.length = 0;
+          saveGestureDB();
+          openDBViewer();
+        }
+      };
+
+      block.appendChild(labelTitle);
+      block.appendChild(delLabelBtn);
+
+      arr.forEach((item, i) => {
+        const row = document.createElement("div");
+        row.style.marginTop = "6px";
+        row.style.fontSize = "12px";
+        row.style.opacity = "0.9";
+
+        row.textContent = `#${i} | ${item.timestamp}`;
+
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "X";
+        delBtn.style.marginLeft = "10px";
+
+        delBtn.onclick = () => {
+          arr.splice(i, 1);
+          saveGestureDB();
+          openDBViewer();
+        };
+
+        row.appendChild(delBtn);
+        block.appendChild(row);
+      });
+
+      overlay.appendChild(block);
+    }
+  }
+
+  renderSection("basic", db.basic || {});
+  renderSection("motion", db.motion || {});
+
+  const closeBtn = document.createElement("button");
+  closeBtn.textContent = "CLOSE";
+  closeBtn.style.marginTop = "20px";
+  closeBtn.onclick = () => overlay.remove();
+
+  overlay.appendChild(closeBtn);
+
+  document.body.appendChild(overlay);
+}
+
+
+dbBtn.onclick = openDBViewer;
