@@ -305,23 +305,32 @@ function mode(arr) {
 }
 
 function drawHands() {
+
   if (!mlReady || !handLandmarker) return;
   if (video.readyState < 2) return;
 
   resizeCanvas();
 
-  const result = handLandmarker.detectForVideo(video, performance.now());
+  const result = handLandmarker.detectForVideo(
+    video,
+    performance.now()
+  );
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // ---------------- NO HAND ----------------
   if (!result.landmarks || result.landmarks.length === 0) {
+
     gestureHUD("NO HAND");
+
     status("RUNNING (0 hands)");
+
     gestureHistory.length = 0;
+
     return;
   }
 
+  // ---------------- HAND ----------------
   const hand = result.landmarks[0];
 
   const thumb = hand[4];
@@ -334,55 +343,103 @@ function drawHands() {
   const handScale = dist(wrist, hand[9]);
 
   // ---------------- FEATURES ----------------
-  const pinch = dist(thumb, index) / handScale;
+  const features = {
 
-  const indexCurl = dist(index, hand[5]) / handScale;
-  const middleCurl = dist(middle, hand[9]) / handScale;
-  const ringCurl = dist(ring, hand[13]) / handScale;
-  const pinkyCurl = dist(pinky, hand[17]) / handScale;
+    pinch:
+      dist(thumb, index) / handScale,
 
-  const open = (indexCurl + middleCurl + ringCurl + pinkyCurl) / 4;
+    indexCurl:
+      dist(index, hand[5]) / handScale,
 
-  // ---------------- GESTURE LOGIC ----------------
-  let gesture;
+    middleCurl:
+      dist(middle, hand[9]) / handScale,
 
-  if (pinch < 0.38) {
-    gesture = "PINCH";
+    ringCurl:
+      dist(ring, hand[13]) / handScale,
+
+    pinkyCurl:
+      dist(pinky, hand[17]) / handScale
+  };
+
+  features.open =
+    (
+      features.indexCurl +
+      features.middleCurl +
+      features.ringCurl +
+      features.pinkyCurl
+    ) / 4;
+
+  // ---------------- DB MATCHING ----------------
+  let bestGesture = "UNKNOWN";
+  let bestScore = Infinity;
+
+  for (const label in gestureDB.basic) {
+
+    const samples = gestureDB.basic[label];
+
+    for (const sample of samples) {
+
+      const f = sample.features;
+
+      const score =
+        Math.abs(features.pinch - f.pinch) +
+        Math.abs(features.open - f.open) +
+        Math.abs(features.indexCurl - f.indexCurl) +
+        Math.abs(features.middleCurl - f.middleCurl) +
+        Math.abs(features.ringCurl - f.ringCurl) +
+        Math.abs(features.pinkyCurl - f.pinkyCurl);
+
+      if (score < bestScore) {
+        bestScore = score;
+        bestGesture = label;
+      }
+    }
   }
-  else if (
-    indexCurl < 0.12 &&
-    middleCurl < 0.12 &&
-    ringCurl < 0.12 &&
-    pinkyCurl < 0.12
-  ) {
-    gesture = "FIST";
-  }
-  else if (open > 0.18) {
-    gesture = "OPEN";
-  }
-  else {
-    gesture = "OPEN";
-  }
+
+  // ---------------- CONFIDENCE ----------------
+  let confidence =
+    Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round((1 - bestScore) * 100)
+      )
+    );
 
   // ---------------- SMOOTHING ----------------
-  gestureHistory.push(gesture);
+  gestureHistory.push(bestGesture);
+
   if (gestureHistory.length > HISTORY_SIZE) {
     gestureHistory.shift();
   }
 
   const stableGesture = mode(gestureHistory);
-  gestureHUD(stableGesture);
+
+  // ---------------- FINGER COUNT ----------------
+  let fingersUp = 0;
+
+  if (features.indexCurl > 0.18) fingersUp++;
+  if (features.middleCurl > 0.18) fingersUp++;
+  if (features.ringCurl > 0.18) fingersUp++;
+  if (features.pinkyCurl > 0.18) fingersUp++;
+
+  // thumb special case
+  if (thumb.x < hand[3].x) {
+    fingersUp++;
+  }
+
+  // ---------------- HUD ----------------
+  gestureHUD(
+    `${stableGesture}
+${fingersUp} FINGERS
+${confidence}%`
+  );
 
   // ---------------- TRAINING ----------------
   if (trainingActive && !trainingLocked) {
 
     trainingBuffer.push({
-      pinch,
-      open,
-      indexCurl,
-      middleCurl,
-      ringCurl,
-      pinkyCurl,
+      ...features,
       landmarks: hand
     });
 
@@ -406,7 +463,9 @@ function drawHands() {
 
   // ---------------- DRAW ----------------
   for (const p of hand) {
+
     ctx.beginPath();
+
     ctx.arc(
       p.x * canvas.width,
       p.y * canvas.height,
@@ -414,11 +473,15 @@ function drawHands() {
       0,
       Math.PI * 2
     );
+
     ctx.fillStyle = "cyan";
+
     ctx.fill();
   }
 
-  status("RUNNING (1 hand)");
+  status(
+    `RUNNING (1 hand) ${stableGesture} ${confidence}%`
+  );
 }
 
 /*---------------Label and save------------------*/
