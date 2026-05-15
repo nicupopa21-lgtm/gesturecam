@@ -34,18 +34,29 @@ function gestureHUD(text) {
     el.style.right = "10px";
     el.style.background = "rgba(0,0,0,0.6)";
     el.style.color = "yellow";
-    el.style.fontSize = "22px";
+    el.style.fontSize = "16px";
     el.style.fontWeight = "bold";
     el.style.fontFamily = "monospace";
     el.style.padding = "10px 14px";
     el.style.borderRadius = "8px";
     el.style.zIndex = "999999";
-    el.style.textAlign = "right";
-    el.style.maxWidth = "200px";
+
+    /* KEY FIXES */
+    el.style.whiteSpace = "nowrap";
+    el.style.width = "max-content";
+    el.style.minWidth = "160px";
+    el.style.textAlign = "left";
+
     document.body.appendChild(el);
   }
 
-  el.textContent = text;
+  const parts = text.split("\n");
+
+  el.innerHTML = `
+    <div>${parts[0] || ""}</div>
+    <div>${parts[1] || ""}</div>
+    <div>${parts[2] || ""}</div>
+  `;
 }
 
 function trainingHUD(msg) {
