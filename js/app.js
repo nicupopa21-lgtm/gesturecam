@@ -175,6 +175,10 @@ function dist(a, b) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
+function normalize(value, wristToMiddle) {
+  return value / wristToMiddle;
+}
+
 function mode(arr) {
   const count = {};
   let best = arr[0];
@@ -212,18 +216,24 @@ function drawHands() {
     const thumb = hand[4];
     const index = hand[8];
     const wrist = hand[0];
+    const middle = hand[9];
+    const handScale = dist(wrist, middle);
 
-    const pinch = dist(thumb, index);
-    const open = dist(index, wrist);
+    const pinch = normalize(dist(thumb, index), handScale);
+    const open = normalize(dist(index, wrist), handScale);
 
     let gesture;
 
-    if (pinch < 0.05) {
+    let gesture;
+
+    if (pinch < 0.45 && open > 0.2) {
       gesture = "PINCH";
-    } else if (open > 0.25) {
-      gesture = "OPEN";
-    } else {
+    } 
+    else if (open < 0.2) {
       gesture = "FIST";
+    } 
+    else {
+      gesture = "OPEN";
     }
 
     gestureHistory.push(gesture);
