@@ -314,6 +314,7 @@ function drawHands() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  // ---------------- NO HAND ----------------
   if (!result.landmarks || result.landmarks.length === 0) {
     gestureHUD("NO HAND");
     status("RUNNING (0 hands)");
@@ -365,17 +366,15 @@ function drawHands() {
 
   // ---------------- SMOOTHING ----------------
   gestureHistory.push(gesture);
-
   if (gestureHistory.length > HISTORY_SIZE) {
     gestureHistory.shift();
   }
 
   const stableGesture = mode(gestureHistory);
-
   gestureHUD(stableGesture);
 
-  // ---------------- TRAINING SAVE ----------------
-  if (trainingActive && trainingGesture) {
+  // ---------------- TRAINING ----------------
+  if (trainingActive && !trainingLocked) {
 
     trainingBuffer.push({
       pinch,
@@ -388,13 +387,20 @@ function drawHands() {
     });
 
     trainingHUD(
-      `RECORDING ${trainingGesture}: ${trainingBuffer.length}/${TRAIN_FRAMES}`
+      `RECORDING ${trainingBuffer.length}/${TRAIN_FRAMES}`
     );
 
+    // ---------------- STOP CONDITION ----------------
     if (trainingBuffer.length >= TRAIN_FRAMES) {
 
+      trainingLocked = true;
       trainingActive = false;
-      askTrainingLabel();
+
+      const bufferCopy = trainingBuffer.slice();
+
+      setTimeout(() => {
+        askTrainingLabel(bufferCopy);
+      }, 0);
     }
   }
 
@@ -417,10 +423,13 @@ function drawHands() {
 
 /*---------------Label and save------------------*/
 
-function askTrainingLabel() {
+function askTrainingLabel(buffer) {
 
   const category = prompt("Type BASIC or MOTION");
-  if (!category) return;
+  if (!category) {
+    trainingLocked = false;
+    return;
+  }
 
   const cat = category.toUpperCase();
 
@@ -435,7 +444,10 @@ function askTrainingLabel() {
     `Existing:\n${existing}\n\nType existing OR new label`
   );
 
-  if (!label) return;
+  if (!label) {
+    trainingLocked = false;
+    return;
+  }
 
   const key = label.toUpperCase();
 
@@ -443,14 +455,14 @@ function askTrainingLabel() {
     dbSection[key] = [];
   }
 
-  saveRecordedSample(cat, key);
+  saveRecordedSample(cat, key, buffer);
 }
 
 
-function saveRecordedSample(category, label) {
+function saveRecordedSample(category, label, buffer) {
 
   const avg = (k) =>
-    trainingBuffer.reduce((sum, f) => sum + f[k], 0) / trainingBuffer.length;
+    buffer.reduce((sum, f) => sum + f[k], 0) / buffer.length;
 
   const sample = {
     features: {
@@ -462,7 +474,7 @@ function saveRecordedSample(category, label) {
       pinkyCurl: avg("pinkyCurl")
     },
 
-    landmarks: trainingBuffer.map(f => f.landmarks),
+    landmarks: buffer.map(f => f.landmarks),
 
     timestamp: Date.now()
   };
@@ -477,6 +489,9 @@ function saveRecordedSample(category, label) {
   saveGestureDB();
 
   trainingHUD(`SAVED ${category}:${label}`);
+
+  // unlock training AFTER save
+  trainingLocked = false;
 }
 
 /*----------------------TRAINING BUTTON--------------------------*/
@@ -487,11 +502,11 @@ let TRAIN_FRAMES = 20;
 
 document.getElementById("train-btn").onclick = () => {
 
-  if (trainingActive) return;
+  if (trainingActive || trainingLocked) return;
 
   trainingActive = true;
+  trainingLocked = false;
   trainingBuffer = [];
-  trainingGesture = null;
 
   trainingHUD("RECORDING...");
 };
