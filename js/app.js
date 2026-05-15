@@ -203,6 +203,15 @@ const DEFAULT_DB = {
     DOWN: [],
     LEFT: [],
     RIGHT: []
+  },
+
+  fingers: {
+    ZERO: [],
+    ONE: [],
+    TWO: [],
+    THREE: [],
+    FOUR: [],
+    FIVE: []
   }
 };
 
@@ -365,6 +374,9 @@ function resizeCanvas() {
 let gestureHistory = [];
 const HISTORY_SIZE = 10;
 
+let fingersHistory = [];
+const FINGERS_HISTORY_SIZE = 7;
+
 function dist(a, b) {
   const dx = a.x - b.x;
   const dy = a.y - b.y;
@@ -390,6 +402,37 @@ function mode(arr) {
 
   return best;
 }
+
+function predictFromDB(dbSection, features) {
+
+  let bestLabel = "UNKNOWN";
+  let bestScore = Infinity;
+
+  for (const label in dbSection) {
+    const samples = dbSection[label];
+
+    for (const sample of samples) {
+
+      const f = sample.features;
+
+      const score =
+        Math.abs(features.pinch - f.pinch) +
+        Math.abs(features.open - f.open) +
+        Math.abs(features.indexCurl - f.indexCurl) +
+        Math.abs(features.middleCurl - f.middleCurl) +
+        Math.abs(features.ringCurl - f.ringCurl) +
+        Math.abs(features.pinkyCurl - f.pinkyCurl);
+
+      if (score < bestScore) {
+        bestScore = score;
+        bestLabel = label;
+      }
+    }
+  }
+
+  return bestLabel;
+}
+
 
 function drawHands() {
 
@@ -431,70 +474,26 @@ function drawHands() {
 
   // ---------------- FEATURES ----------------
   const features = {
-
-    pinch:
-      dist(thumb, index) / handScale,
-
-    indexCurl:
-      dist(index, hand[5]) / handScale,
-
-    middleCurl:
-      dist(middle, hand[9]) / handScale,
-
-    ringCurl:
-      dist(ring, hand[13]) / handScale,
-
-    pinkyCurl:
-      dist(pinky, hand[17]) / handScale
+    pinch: dist(thumb, index) / handScale,
+    indexCurl: dist(index, hand[5]) / handScale,
+    middleCurl: dist(middle, hand[9]) / handScale,
+    ringCurl: dist(ring, hand[13]) / handScale,
+    pinkyCurl: dist(pinky, hand[17]) / handScale
   };
 
   features.open =
-    (
-      features.indexCurl +
-      features.middleCurl +
-      features.ringCurl +
-      features.pinkyCurl
-    ) / 4;
+    (features.indexCurl +
+     features.middleCurl +
+     features.ringCurl +
+     features.pinkyCurl) / 4;
 
-  // ---------------- DB MATCHING ----------------
-  let bestGesture = "UNKNOWN";
-  let bestScore = Infinity;
-
-  for (const label in gestureDB.basic) {
-
-    const samples = gestureDB.basic[label];
-
-    for (const sample of samples) {
-
-      const f = sample.features;
-
-      const score =
-        Math.abs(features.pinch - f.pinch) +
-        Math.abs(features.open - f.open) +
-        Math.abs(features.indexCurl - f.indexCurl) +
-        Math.abs(features.middleCurl - f.middleCurl) +
-        Math.abs(features.ringCurl - f.ringCurl) +
-        Math.abs(features.pinkyCurl - f.pinkyCurl);
-
-      if (score < bestScore) {
-        bestScore = score;
-        bestGesture = label;
-      }
-    }
-  }
-
-  // ---------------- CONFIDENCE ----------------
-  let confidence =
-    Math.max(
-      0,
-      Math.min(
-        100,
-        Math.round((1 - bestScore) * 100)
-      )
-    );
+  // ---------------- ML INFERENCE (kNN) ----------------
+  const gesture = predictFromDB(gestureDB.basic, features);
+  const motion = predictFromDB(gestureDB.motion, features);
+  const fingers = predictFromDB(gestureDB.fingers, features);
 
   // ---------------- SMOOTHING ----------------
-  gestureHistory.push(bestGesture);
+  gestureHistory.push(gesture);
 
   if (gestureHistory.length > HISTORY_SIZE) {
     gestureHistory.shift();
@@ -502,24 +501,19 @@ function drawHands() {
 
   const stableGesture = mode(gestureHistory);
 
-  // ---------------- FINGER COUNT ----------------
-  let fingersUp = 0;
+  fingersHistory.push(fingers);
 
-  if (features.indexCurl > 0.18) fingersUp++;
-  if (features.middleCurl > 0.18) fingersUp++;
-  if (features.ringCurl > 0.18) fingersUp++;
-  if (features.pinkyCurl > 0.18) fingersUp++;
-
-  // thumb special case
-  if (thumb.x < hand[3].x) {
-    fingersUp++;
-  }
+    if (fingersHistory.length > FINGERS_HISTORY_SIZE) {
+      fingersHistory.shift();
+    }
+    
+    const stableFingers = mode(fingersHistory);
 
   // ---------------- HUD ----------------
   gestureHUD(
     `gesture: ${stableGesture}
-    confidence: ${confidence}%
-    fingers: ${fingersUp}`
+motion: ${motion}
+fingers: ${fingers}`
   );
 
   // ---------------- TRAINING ----------------
@@ -534,7 +528,6 @@ function drawHands() {
       `RECORDING ${trainingBuffer.length}/${TRAIN_FRAMES}`
     );
 
-    // ---------------- STOP CONDITION ----------------
     if (trainingBuffer.length >= TRAIN_FRAMES) {
 
       trainingLocked = true;
@@ -552,7 +545,6 @@ function drawHands() {
   for (const p of hand) {
 
     ctx.beginPath();
-
     ctx.arc(
       p.x * canvas.width,
       p.y * canvas.height,
@@ -562,12 +554,11 @@ function drawHands() {
     );
 
     ctx.fillStyle = "cyan";
-
     ctx.fill();
   }
 
   status(
-    `RUNNING (1 hand) ${stableGesture} ${confidence}%`
+    `RUNNING (1 hand) ${stableGesture}`
   );
 }
 
@@ -599,7 +590,7 @@ function askTrainingLabel(buffer) {
   categorySelect.style.padding = "8px";
   categorySelect.style.fontSize = "16px";
 
-  ["BASIC", "MOTION"].forEach(c => {
+  ["BASIC", "MOTION", "FINGERS"].forEach(c => {
     const opt = document.createElement("option");
     opt.value = c;
     opt.textContent = c;
@@ -623,9 +614,11 @@ function askTrainingLabel(buffer) {
     labelSelect.innerHTML = "";
 
     const dbSection =
-      categorySelect.value === "MOTION"
-        ? gestureDB.motion
-        : gestureDB.basic;
+      categorySelect.value === "FINGERS"
+        ? gestureDB.fingers
+        : categorySelect.value === "MOTION"
+          ? gestureDB.motion
+          : gestureDB.basic;
 
     Object.keys(dbSection).forEach(k => {
       const opt = document.createElement("option");
@@ -713,22 +706,21 @@ function saveRecordedSample(category, label, buffer) {
       pinkyCurl: avg("pinkyCurl")
     },
 
-    landmarks: buffer.map(f => f.landmarks),
     timestamp: Date.now()
   };
 
   const targetDB =
-    category === "MOTION"
-      ? gestureDB.motion
-      : gestureDB.basic;
+    category === "FINGERS"
+      ? gestureDB.fingers
+      : category === "MOTION"
+        ? gestureDB.motion
+        : gestureDB.basic;
 
   targetDB[label] = targetDB[label] || [];
   targetDB[label].push(sample);
 
   saveGestureDB();
-
   trainingHUD(`SAVED ${category}:${label}`);
-
   trainingLocked = false;
 }
 
