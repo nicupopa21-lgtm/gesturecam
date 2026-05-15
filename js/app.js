@@ -3,48 +3,69 @@ import {
   FilesetResolver
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest";
 
-/* ---------------- UI HELPERS ---------------- */
-function setStatus(msg) {
-  const el = document.getElementById("ml-status");
-  if (el) el.textContent = msg;
-}
-
-function setError(msg) {
-  let box = document.getElementById("error-box");
-  if (!box) {
-    box = document.createElement("div");
-    box.id = "error-box";
-    box.style.position = "absolute";
-    box.style.bottom = "10px";
-    box.style.left = "10px";
-    box.style.right = "10px";
-    box.style.padding = "10px";
-    box.style.background = "rgba(255,0,0,0.85)";
-    box.style.color = "white";
-    box.style.fontSize = "12px";
-    box.style.zIndex = "9999";
-    box.style.borderRadius = "8px";
-    document.body.appendChild(box);
-  }
-  box.textContent = msg;
-}
-
 /* ---------------- DOM ---------------- */
 const video = document.getElementById("video");
 const canvas = document.getElementById("skeleton-canvas");
 const ctx = canvas.getContext("2d");
 
+/* ---------------- DEBUG UI ---------------- */
+const debug = createDebugUI();
+
 /* ---------------- STATE ---------------- */
 const state = {
   landmarker: null,
   mlReady: false,
-  videoReady: false
+  videoReady: false,
+  running: false
 };
+
+/* ---------------- DEBUG PANEL ---------------- */
+function createDebugUI() {
+  const box = document.createElement("div");
+  box.style.position = "absolute";
+  box.style.top = "10px";
+  box.style.left = "10px";
+  box.style.right = "10px";
+  box.style.zIndex = "9999";
+  box.style.fontSize = "12px";
+  box.style.fontFamily = "monospace";
+  box.style.background = "rgba(0,0,0,0.7)";
+  box.style.color = "#0ff";
+  box.style.padding = "10px";
+  box.style.borderRadius = "8px";
+  box.style.whiteSpace = "pre-line";
+  document.body.appendChild(box);
+
+  return {
+    set: (t) => box.textContent = t
+  };
+}
+
+function status(step, extra = "") {
+  debug.set(
+`GestureCam DEBUG
+
+Step: ${step}
+Camera: ${state.videoReady ? "READY" : "WAITING"}
+AI: ${state.mlReady ? "READY" : "LOADING"}
+Loop: ${state.running ? "RUNNING" : "STOPPED"}
+
+${extra}`
+  );
+}
+
+function error(msg) {
+  debug.set(
+`❌ ERROR
+
+${msg}`
+  );
+}
 
 /* ---------------- CAMERA ---------------- */
 async function startCamera() {
   try {
-    setStatus("Starting camera...");
+    status("requesting camera");
 
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: "user" },
@@ -53,21 +74,22 @@ async function startCamera() {
 
     video.srcObject = stream;
 
-    return new Promise(resolve => {
-      video.onloadedmetadata = () => {
-        video.play();
+    await new Promise(res => {
+      video.onloadedmetadata = async () => {
+        await video.play();
         state.videoReady = true;
-        setStatus("Camera ready");
-        resolve();
+        status("camera ready");
+        res();
       };
     });
+
   } catch (e) {
-    setError("Camera error: " + e.message);
+    error("Camera failed: " + e.message);
     throw e;
   }
 }
 
-/* ---------------- MODEL LOADER (SAFE FALLBACK) ---------------- */
+/* ---------------- MODEL LOADER ---------------- */
 const MODEL_URLS = [
   "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float32/1/hand_landmarker.task",
   "https://storage.googleapis.com/mediapipe-tasks/hand_landmarker/hand_landmarker.task"
@@ -76,7 +98,8 @@ const MODEL_URLS = [
 async function loadModel(vision) {
   for (const url of MODEL_URLS) {
     try {
-      setStatus("Loading model...");
+      status("loading model", url);
+
       return await HandLandmarker.createFromOptions(vision, {
         baseOptions: {
           modelAssetPath: url,
@@ -85,32 +108,34 @@ async function loadModel(vision) {
         runningMode: "VIDEO",
         numHands: 1
       });
+
     } catch (e) {
       console.warn("Model failed:", url);
     }
   }
+
   throw new Error("All model URLs failed");
 }
 
 /* ---------------- AI INIT ---------------- */
 async function initAI() {
   try {
-    setStatus("Loading AI runtime...");
+    status("loading wasm");
 
     const vision = await FilesetResolver.forVisionTasks(
       "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
     );
 
+    status("loading model");
+
     state.landmarker = await loadModel(vision);
+
     state.mlReady = true;
 
-    setStatus("AI Ready");
-
-    const dot = document.getElementById("ml-dot");
-    if (dot) dot.classList.add("active");
+    status("AI READY");
 
   } catch (e) {
-    setError("AI init failed: " + e.message);
+    error("AI failed: " + e.message);
   }
 }
 
@@ -139,7 +164,7 @@ function draw(landmarks) {
 
   ctx.clearRect(0, 0, w, h);
 
-  ctx.strokeStyle = "cyan";
+  ctx.strokeStyle = "#00ffff";
   ctx.lineWidth = 2;
 
   for (const [a, b] of CONNECTIONS) {
@@ -154,13 +179,16 @@ function draw(landmarks) {
 
   for (const p of landmarks) {
     ctx.beginPath();
-    ctx.arc(p.x * w, p.y * h, 4, 0, Math.PI * 2);
+    ctx.arc(p.x * w, p.y * h, 3.5, 0, Math.PI * 2);
     ctx.fillStyle = "white";
     ctx.fill();
   }
 }
 
-/* ---------------- LOOP ---------------- */
+/* ---------------- LOOP + FPS ---------------- */
+let last = performance.now();
+let fps = 0;
+
 function loop() {
   requestAnimationFrame(loop);
 
@@ -170,24 +198,42 @@ function loop() {
   resizeCanvas();
 
   try {
-    const result = state.landmarker.detectForVideo(video, performance.now());
+    const now = performance.now();
 
-    if (result.landmarks?.length) {
+    const result = state.landmarker.detectForVideo(video, now);
+
+    if (result?.landmarks?.length) {
       draw(result.landmarks[0]);
     }
+
+    // FPS
+    fps = Math.round(1000 / (now - last));
+    last = now;
+
+    status("running", `FPS: ${fps}`);
+
+    state.running = true;
+
   } catch (e) {
-    setError("Detection error: " + e.message);
+    error("Loop crash: " + e.message);
+    state.running = false;
   }
 }
 
-/* ---------------- BOOT ---------------- */
+/* ---------------- BOOT SEQUENCE ---------------- */
 async function start() {
   try {
+    status("booting");
+
     await startCamera();
     await initAI();
+
+    status("starting loop");
+
     loop();
+
   } catch (e) {
-    setError("Startup failed: " + e.message);
+    error("Startup failed: " + e.message);
   }
 }
 
