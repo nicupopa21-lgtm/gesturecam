@@ -48,6 +48,29 @@ function gestureHUD(text) {
   el.textContent = text;
 }
 
+function trainingHUD(msg) {
+  let el = document.getElementById("training-hud");
+
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "training-hud";
+
+    el.style.position = "fixed";
+    el.style.bottom = "10px";
+    el.style.right = "10px";
+    el.style.background = "rgba(0,0,0,0.8)";
+    el.style.color = "yellow";
+    el.style.padding = "8px 12px";
+    el.style.fontSize = "14px";
+    el.style.fontFamily = "monospace";
+    el.style.zIndex = "999999";
+    el.style.borderRadius = "6px";
+
+    document.body.appendChild(el);
+  }
+
+  el.textContent = msg;
+}
 /* ---------------- ERROR OVERLAY ---------------- */
 window.onerror = (msg, src, line, col, err) => {
   document.body.innerHTML = `
@@ -302,29 +325,45 @@ function drawHands() {
 
   const thumb = hand[4];
   const index = hand[8];
+  const middle = hand[12];
+  const ring = hand[16];
+  const pinky = hand[20];
   const wrist = hand[0];
-  const middle = hand[9];
 
-  const handScale = dist(wrist, middle);
+  const handScale = dist(wrist, hand[9]);
 
-  // normalized distances
+  // ---------------- FEATURES ----------------
   const pinch = dist(thumb, index) / handScale;
-  const open = dist(index, wrist) / handScale;
 
+  const indexCurl = dist(index, hand[5]) / handScale;
+  const middleCurl = dist(middle, hand[9]) / handScale;
+  const ringCurl = dist(ring, hand[13]) / handScale;
+  const pinkyCurl = dist(pinky, hand[17]) / handScale;
+
+  const open = (indexCurl + middleCurl + ringCurl + pinkyCurl) / 4;
+
+  // ---------------- GESTURE LOGIC ----------------
   let gesture;
 
-  // SIMPLE LOGIC (stable baseline)
-  if (pinch < 0.40) {
+  if (pinch < 0.38) {
     gesture = "PINCH";
-  } 
-  else if (open < 0.20) {
+  }
+  else if (
+    indexCurl < 0.12 &&
+    middleCurl < 0.12 &&
+    ringCurl < 0.12 &&
+    pinkyCurl < 0.12
+  ) {
     gesture = "FIST";
-  } 
+  }
+  else if (open > 0.18) {
+    gesture = "OPEN";
+  }
   else {
     gesture = "OPEN";
   }
 
-  // smoothing (keep your system)
+  // ---------------- SMOOTHING ----------------
   gestureHistory.push(gesture);
 
   if (gestureHistory.length > HISTORY_SIZE) {
@@ -335,7 +374,30 @@ function drawHands() {
 
   gestureHUD(stableGesture);
 
-  // draw hand
+  // ---------------- TRAINING SAVE ----------------
+  if (trainingMode && trainingGesture) {
+
+    gestureDB.basic[trainingGesture].push({
+      features: {
+        pinch,
+        open,
+        indexCurl,
+        middleCurl,
+        ringCurl,
+        pinkyCurl
+      },
+      landmarks: hand,
+      timestamp: Date.now()
+    });
+
+    saveGestureDB();
+
+    trainingHUD(
+      `TRAINING ${trainingGesture}: ${gestureDB.basic[trainingGesture].length}`
+    );
+  }
+
+  // ---------------- DRAW ----------------
   for (const p of hand) {
     ctx.beginPath();
     ctx.arc(
@@ -352,11 +414,36 @@ function drawHands() {
   status("RUNNING (1 hand)");
 }
 
+
+/*----------------------TRAINING BUTTON--------------------------*/
+let trainingMode = false;
+let trainingGesture = null;
+
+document.getElementById("train-btn").onclick = () => {
+  trainingMode = !trainingMode;
+
+  if (trainingMode) {
+    trainingGesture = "PINCH"; // temporary
+    trainingHUD("TRAINING: PINCH ON");
+  } else {
+    trainingHUD("TRAINING OFF");
+  }
+};
+
+
+
+
+
 /* ---------------- LOOP ---------------- */
 function loop() {
   requestAnimationFrame(loop);
   drawHands();
 }
 
+
 /* ---------------- START ---------------- */
 window.addEventListener("load", startCamera);
+
+
+
+
