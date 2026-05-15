@@ -576,20 +576,41 @@ function drawHands() {
 
   // --- PINCH STATE TOGGLE ---
   if (isPinching && !pinchActive) {
-    pinchActive = true;
-    createOrb();
+  pinchActive = true;
+
+  createOrb();
+
+  // store hand start position (NORMALIZED SCREEN SPACE)
+  pinchStartHand = {
+    x: wrist.x,
+    y: wrist.y
+  };
+
+  // store orb start position (screen space)
+  orbStartPos = {
+    x: window.innerWidth / 2,
+    y: window.innerHeight / 2
+  };
+}
   }
   
   if (!isPinching && pinchActive) {
-    pinchActive = false;
-    removeOrb();
-  }
+  pinchActive = false;
+
+  removeOrb();
+
+  pinchStartHand = null;
+  orbStartPos = null;
+}
   
   // --- ORB FOLLOW (IMPORTANT: AFTER TOGGLE) ---
   if (pinchActive && orbEl) {
   
-    const x = wrist.x * window.innerWidth;
-    const y = wrist.y * window.innerHeight;
+    const xNorm = MIRROR ? (1 - wrist.x) : wrist.x;
+    const yNorm = wrist.y;
+    
+    const x = xNorm * window.innerWidth;
+    const y = yNorm * window.innerHeight;
   
     orbEl.style.left = x + "px";
     orbEl.style.top = y + "px";
@@ -1092,7 +1113,12 @@ dbBtn.onclick = openDBViewer;
 
 
  let pinchActive = false;
- let orbEl = null;
+
+  let orbEl = null;
+  
+  // anchor points
+  let pinchStartHand = null;
+  let orbStartPos = null;
 
 function createOrb() {
   orbEl = document.createElement("div");
