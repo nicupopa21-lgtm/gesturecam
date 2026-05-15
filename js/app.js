@@ -41,21 +41,24 @@ function gestureHUD(text) {
     el.style.borderRadius = "8px";
     el.style.zIndex = "999999";
 
-    /* KEY FIXES */
     el.style.whiteSpace = "nowrap";
     el.style.width = "max-content";
-    el.style.minWidth = "160px";
     el.style.textAlign = "left";
 
     document.body.appendChild(el);
   }
 
-  const parts = text.split("\n");
+  // ---- FORCE CLEAN SPLIT (prevents leakage) ----
+  let [g = "", c = "", f = ""] = (text || "").split("\n");
+
+  // extra safety: strip accidental merging like "90%4 FINGERS"
+  c = c.replace(/(\d+)%(\d+)/, "$1%");
+  f = f.replace(/(\d+)%(\d+)/, "$2");
 
   el.innerHTML = `
-    <div>${parts[0] || ""}</div>
-    <div>${parts[1] || ""}</div>
-    <div>${parts[2] || ""}</div>
+    <div>gesture: ${g}</div>
+    <div>confidence: ${c}</div>
+    <div>fingers: ${f}</div>
   `;
 }
 
