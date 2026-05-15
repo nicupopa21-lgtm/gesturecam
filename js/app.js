@@ -377,26 +377,26 @@ function drawHands() {
   // ---------------- TRAINING SAVE ----------------
   if (trainingActive && trainingGesture) {
 
-  trainingBuffer.push({
-    pinch,
-    open,
-    indexCurl,
-    middleCurl,
-    ringCurl,
-    pinkyCurl,
-    landmarks: hand
-  });
+    trainingBuffer.push({
+      pinch,
+      open,
+      indexCurl,
+      middleCurl,
+      ringCurl,
+      pinkyCurl,
+      landmarks: hand
+    });
 
-  trainingHUD(
-    `RECORDING ${trainingGesture}: ${trainingBuffer.length}/${TRAIN_FRAMES}`
-  );
+    trainingHUD(
+      `RECORDING ${trainingGesture}: ${trainingBuffer.length}/${TRAIN_FRAMES}`
+    );
 
-  if (trainingBuffer.length >= TRAIN_FRAMES) {
+    if (trainingBuffer.length >= TRAIN_FRAMES) {
 
-  trainingActive = false;
-
-  askTrainingLabel(); // NEW STEP (we add this next)
-}
+      trainingActive = false;
+      askTrainingLabel();
+    }
+  }
 
   // ---------------- DRAW ----------------
   for (const p of hand) {
