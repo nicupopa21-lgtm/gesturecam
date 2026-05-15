@@ -166,11 +166,29 @@ function resizeCanvas() {
 }
 
 /* ---------------- DRAW HANDS ---------------- */
+let gestureHistory = [];
+const HISTORY_SIZE = 10;
 
 function dist(a, b) {
   const dx = a.x - b.x;
   const dy = a.y - b.y;
   return Math.sqrt(dx * dx + dy * dy);
+}
+
+function mode(arr) {
+  const count = {};
+  let best = arr[0];
+  let max = 0;
+
+  for (const v of arr) {
+    count[v] = (count[v] || 0) + 1;
+    if (count[v] > max) {
+      max = count[v];
+      best = v;
+    }
+  }
+
+  return best;
 }
 
 function drawHands() {
@@ -183,24 +201,41 @@ function drawHands() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  if (!result.landmarks) return;
+  if (!result.landmarks || result.landmarks.length === 0) {
+    gestureHUD("NO HAND");
+    status("RUNNING (0 hands)");
+    return;
+  }
 
   for (const hand of result.landmarks) {
+
     const thumb = hand[4];
     const index = hand[8];
     const wrist = hand[0];
-  
+
     const pinch = dist(thumb, index);
     const open = dist(index, wrist);
-  
+
+    let gesture;
+
     if (pinch < 0.05) {
-      gestureHUD("🤏 PINCH");
+      gesture = "PINCH";
     } else if (open > 0.25) {
-      gestureHUD("🖐 OPEN HAND");
+      gesture = "OPEN";
     } else {
-      gestureHUD("✊ HAND");
+      gesture = "FIST";
     }
-  
+
+    gestureHistory.push(gesture);
+
+    if (gestureHistory.length > HISTORY_SIZE) {
+      gestureHistory.shift();
+    }
+
+    const stableGesture = mode(gestureHistory);
+
+    gestureHUD(stableGesture);
+
     for (const p of hand) {
       ctx.beginPath();
       ctx.arc(
@@ -214,9 +249,7 @@ function drawHands() {
       ctx.fill();
     }
   }
-  if (!result.landmarks || result.landmarks.length === 0) {
-  gestureHUD("NO HAND");
-}
+
   status("RUNNING (" + result.landmarks.length + " hand(s))");
 }
 
