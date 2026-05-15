@@ -63,3 +63,51 @@ async function startCamera() {
 }
 
 window.addEventListener("load", startCamera);
+
+
+/*------------------------skeleton test----------------------/*
+
+const canvas = document.getElementById("skeleton-canvas");
+const ctx = canvas.getContext("2d");
+const video = document.getElementById("video");
+
+function resize() {
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+}
+
+function drawFakeSkeleton() {
+  if (!video.videoWidth) return;
+
+  resize();
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "cyan";
+
+  // fake points
+  const points = [
+    { x: 0.3, y: 0.3 },
+    { x: 0.5, y: 0.4 },
+    { x: 0.7, y: 0.6 }
+  ];
+
+  for (const p of points) {
+    ctx.beginPath();
+    ctx.arc(
+      p.x * canvas.width,
+      p.y * canvas.height,
+      10,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+  }
+}
+
+function loop() {
+  requestAnimationFrame(loop);
+  drawFakeSkeleton();
+}
+
+loop();
