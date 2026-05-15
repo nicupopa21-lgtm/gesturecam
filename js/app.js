@@ -220,6 +220,9 @@ function drawHands() {
   const index = hand[8];
   const wrist = hand[0];
   const middle = hand[9];
+  const indexMcp = hand[5];
+  const middleTip = hand[12];
+  const ringTip = hand[16];
 
   const handScale = dist(wrist, middle);
 
@@ -229,15 +232,32 @@ function drawHands() {
   /* ---------------- GESTURE CLASSIFICATION ---------------- */
   let gesture;
 
-  if (pinch < 0.45 && open > 0.2) {
-    gesture = "PINCH";
-  } 
-  else if (open < 0.2) {
-    gesture = "FIST";
-  } 
-  else {
-    gesture = "OPEN";
-  }
+/* finger curl checks */
+const indexCurl = dist(index, indexMcp);
+const middleCurl = dist(hand[12], hand[9]);
+const ringCurl = dist(hand[16], hand[13]);
+
+const handScale = dist(wrist, middle);
+
+/* normalized */
+const nIndexCurl = indexCurl / handScale;
+const nMiddleCurl = middleCurl / handScale;
+const nRingCurl = ringCurl / handScale;
+
+/* PINCH */
+if (dist(thumb, index) / handScale < 0.45 && nIndexCurl > 0.2) {
+  gesture = "PINCH";
+}
+
+/* FIST (ALL FINGERS CURLED) */
+else if (nIndexCurl < 0.15 && nMiddleCurl < 0.15 && nRingCurl < 0.15) {
+  gesture = "FIST";
+}
+
+/* OPEN */
+else {
+  gesture = "OPEN";
+}
 
   /* ---------------- SMOOTHING ---------------- */
   gestureHistory.push(gesture);
