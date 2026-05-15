@@ -375,27 +375,55 @@ function drawHands() {
   gestureHUD(stableGesture);
 
   // ---------------- TRAINING SAVE ----------------
-  if (trainingMode && trainingGesture) {
+  if (trainingActive && trainingGesture) {
 
-    gestureDB.basic[trainingGesture].push({
+  trainingBuffer.push({
+    pinch,
+    open,
+    indexCurl,
+    middleCurl,
+    ringCurl,
+    pinkyCurl,
+    landmarks: hand
+  });
+
+  trainingHUD(
+    `RECORDING ${trainingGesture}: ${trainingBuffer.length}/${TRAIN_FRAMES}`
+  );
+
+  if (trainingBuffer.length >= TRAIN_FRAMES) {
+
+    // ---- AVERAGE FEATURES ----
+    const avg = (key) =>
+      trainingBuffer.reduce((sum, f) => sum + f[key], 0) / trainingBuffer.length;
+
+    const sample = {
       features: {
-        pinch,
-        open,
-        indexCurl,
-        middleCurl,
-        ringCurl,
-        pinkyCurl
+        pinch: avg("pinch"),
+        open: avg("open"),
+        indexCurl: avg("indexCurl"),
+        middleCurl: avg("middleCurl"),
+        ringCurl: avg("ringCurl"),
+        pinkyCurl: avg("pinkyCurl")
       },
-      landmarks: hand,
-      timestamp: Date.now()
-    });
 
+      landmarks: trainingBuffer.map(f => f.landmarks),
+
+      timestamp: Date.now()
+    };
+
+    // ---- SAVE TO DB ----
+    gestureDB.basic[trainingGesture].push(sample);
     saveGestureDB();
 
-    trainingHUD(
-      `TRAINING ${trainingGesture}: ${gestureDB.basic[trainingGesture].length}`
-    );
+    trainingHUD(`SAVED ${trainingGesture} (${gestureDB.basic[trainingGesture].length})`);
+
+    // ---- STOP TRAINING ----
+    trainingActive = false;
+    trainingGesture = null;
+    trainingBuffer = [];
   }
+}
 
   // ---------------- DRAW ----------------
   for (const p of hand) {
@@ -416,18 +444,22 @@ function drawHands() {
 
 
 /*----------------------TRAINING BUTTON--------------------------*/
-let trainingMode = false;
+let trainingActive = false;
 let trainingGesture = null;
+let trainingBuffer = [];
+let TRAIN_FRAMES = 20;
 
 document.getElementById("train-btn").onclick = () => {
-  trainingMode = !trainingMode;
 
-  if (trainingMode) {
-    trainingGesture = "PINCH"; // temporary
-    trainingHUD("TRAINING: PINCH ON");
-  } else {
-    trainingHUD("TRAINING OFF");
-  }
+  const label = prompt("Which gesture? PINCH / FIST / OPEN");
+
+  if (!label) return;
+
+  trainingGesture = label.toUpperCase();
+  trainingActive = true;
+  trainingBuffer = [];
+
+  trainingHUD(`RECORDING ${trainingGesture}...`);
 };
 
 
