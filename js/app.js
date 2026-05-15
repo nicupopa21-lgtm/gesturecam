@@ -1,6 +1,29 @@
 console.log("APP LOADED");
 
-/* ---------------- ERROR DISPLAY ---------------- */
+/* ---------------- STATUS HUD (MOBILE DEBUG) ---------------- */
+function status(msg) {
+  let el = document.getElementById("debug-status");
+
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "debug-status";
+    el.style.position = "fixed";
+    el.style.top = "0";
+    el.style.left = "0";
+    el.style.right = "0";
+    el.style.background = "rgba(0,0,0,0.85)";
+    el.style.color = "white";
+    el.style.fontSize = "12px";
+    el.style.padding = "6px";
+    el.style.zIndex = "999999";
+    el.style.fontFamily = "monospace";
+    document.body.appendChild(el);
+  }
+
+  el.textContent = msg;
+}
+
+/* ---------------- ERROR OVERLAY ---------------- */
 window.onerror = (msg, src, line, col, err) => {
   document.body.innerHTML = `
     <div style="
@@ -20,44 +43,43 @@ window.onerror = (msg, src, line, col, err) => {
   `;
 };
 
-/* ---------------- MEDIA PIPE IMPORT ---------------- */
-import {
-  HandLandmarker,
-  FilesetResolver
-} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest";
-
 /* ---------------- ELEMENTS ---------------- */
 const video = document.getElementById("video");
 const canvas = document.getElementById("skeleton-canvas");
 const ctx = canvas.getContext("2d");
 const loading = document.getElementById("loading-screen");
 
-/* ---------------- ML STATE ---------------- */
+/* ---------------- ML ---------------- */
+import {
+  HandLandmarker,
+  FilesetResolver
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest";
+
 let handLandmarker = null;
 let mlReady = false;
 
 /* ---------------- CAMERA ---------------- */
 async function startCamera() {
   try {
-    console.log("Requesting camera...");
+    status("Requesting camera...");
 
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user" },
+      video: true,
       audio: false
     });
 
     video.srcObject = stream;
     await video.play();
 
-    console.log("Camera started");
+    status("Camera started");
 
     if (loading) loading.style.display = "none";
 
-    initML(); // start ML AFTER camera
-    loop();  // start render loop
+    initML();
+    loop();
 
   } catch (err) {
-    console.error(err);
+    status("Camera failed: " + err.name);
 
     document.body.innerHTML = `
       <div style="
@@ -75,14 +97,16 @@ async function startCamera() {
   }
 }
 
-/* ---------------- INIT MEDIA PIPE ---------------- */
+/* ---------------- ML INIT ---------------- */
 async function initML() {
   try {
-    console.log("Loading ML...");
+    status("Loading AI...");
 
     const vision = await FilesetResolver.forVisionTasks(
       "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
     );
+
+    status("Model loading...");
 
     handLandmarker = await HandLandmarker.createFromOptions(vision, {
       baseOptions: {
@@ -95,10 +119,10 @@ async function initML() {
     });
 
     mlReady = true;
-    console.log("ML READY");
+    status("AI READY");
 
   } catch (e) {
-    console.error("ML failed", e);
+    status("AI FAILED: " + e.message);
   }
 }
 
@@ -142,6 +166,8 @@ function drawHands() {
       ctx.fill();
     }
   }
+
+  status("RUNNING (" + result.landmarks.length + " hand(s))");
 }
 
 /* ---------------- LOOP ---------------- */
