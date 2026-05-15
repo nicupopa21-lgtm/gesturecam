@@ -558,6 +558,7 @@ function drawHands() {
     }
     
     const stableDirection = mode(directionHistory);
+  
 
   // ---------------- HUD ----------------
   gestureHUD(
