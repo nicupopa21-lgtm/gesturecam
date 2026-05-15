@@ -537,51 +537,31 @@ const video = $("video");
 const canvas = $("skeleton-canvas");
 const ctx = canvas.getContext("2d");
 
-async function init() {
-  $("loading-msg").textContent = "Starting camera...";
+async function initAI(){
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
-      audio: false
-    });
-    video.srcObject = stream;
-    state.videoTrack = stream.getVideoTracks()[0];
-    await new Promise(r => video.addEventListener("loadedmetadata", r, { once: true }));
-    state.videoReady = true;
-  } catch (e) {
-    $("loading-msg").textContent = "Camera error: " + e.message;
-    return;
-  }
+    status.innerText = "Loading AI...";
 
-  $("loading-msg").textContent = "Loading MediaPipe AI...";
-  try {
+    // FORCE stable WASM loader
     const vision = await FilesetResolver.forVisionTasks(
       "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
     );
-    state.handLandmarker = await HandLandmarker.createFromOptions(vision, {
+
+    landmarker = await HandLandmarker.createFromOptions(vision, {
       baseOptions: {
         modelAssetPath:
-      "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float32/1/hand_landmarker.task",
+          "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float32/1/hand_landmarker.task",
         delegate: "CPU"
       },
       runningMode: "VIDEO",
-      numHands: 1,
-      minHandDetectionConfidence: 0.55,
-      minHandPresenceConfidence: 0.55,
-      minTrackingConfidence: 0.55,
+      numHands: 1
     });
-    state.mlReady = true;
-    $("ml-dot").className = "dot active";
-    $("ml-status").textContent = "AI ready";
-  } catch (e) {
-    $("loading-msg").textContent = "AI load failed: " + e.message;
-    return;
-  }
 
-  loadFromStorage();
-  renderGestureList();
-  $("loading-screen").classList.add("hidden");
-  detectLoop();
+    status.innerText = "AI Ready";
+
+  } catch (e) {
+    console.error(e);
+    status.innerText = "AI failed: " + e.message;
+  }
 }
 
 function normalizeFeatures(landmarks) {
